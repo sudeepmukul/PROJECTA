@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Welcome to Hogwarts — Interactive WebGL Experience</title>
+    
+    <!-- Google Fonts: Cinzel for Classical Serif Headings, Montserrat for Clean Sans UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js r128 & GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-night: #050813;
+            --gold-primary: #d4af37;
+            --gold-bright: #ffe699;
+            --gold-dim: rgba(212, 175, 55, 0.3);
+            --gold-glow: rgba(212, 175, 55, 0.15);
+            --glass-bg: rgba(7, 11, 22, 0.65);
+            --text-light: #e6e9f0;
+            --text-muted: #8b95a5;
+            --correct-bg: rgba(30, 130, 76, 0.35);
+            --correct-border: #2ecc71;
+            --wrong-bg: rgba(169, 50, 38, 0.35);
+            --wrong-border: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-night);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-light);
+            overscroll-behavior: none;
+            touch-action: none;
+        }
+
+        /* WebGL Canvas Layer */
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Subtle Atmospheric Vignette & Film Grain Overlay */
+        #atmosphere-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 45%, rgba(2, 4, 10, 0.85) 100%);
+        }
+
+        /* HUD Layer */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 4;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem 3.5rem;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .brand-lockup {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .brand-subtitle {
+            font-size: 0.65rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            margin-bottom: 0.35rem;
+            font-weight: 500;
+        }
+
+        .brand-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            letter-spacing: 0.2em;
+            color: var(--text-light);
+            font-weight: 600;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Score / Artifact Tracker */
+        .hud-stats {
+            text-align: right;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--gold-dim);
+            padding: 0.75rem 1.25rem;
+            border-radius: 4px;
+            pointer-events: auto;
+        }
+
+        .stats-label {
+            font-size: 0.6rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .stats-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: var(--gold-primary);
+            letter-spacing: 0.15em;
+        }
+
+        /* Right Side Waypoint Compass / Progress Bar */
+        .compass-rail {
+            position: fixed;
+            right: 3.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+            pointer-events: auto;
+        }
+
+        .compass-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(212, 175, 55, 0.2);
+            z-index: -1;
+        }
+
+        .compass-line-fill {
+            width: 100%;
+            height: 0%;
+            background: var(--gold-primary);
+            box-shadow: 0 0 8px var(--gold-primary);
+        }
+
+        .compass-node {
+            width: 10px;
+            height: 10px;
+            border: 1px solid var(--gold-primary);
+            background: var(--bg-night);
+            transform: rotate(45deg);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .compass-node:hover,
+        .compass-node.active {
+            background: var(--gold-primary);
+            box-shadow: 0 0 12px var(--gold-primary);
+            transform: rotate(45deg) scale(1.3);
+        }
+
+        .compass-node::before {
+            content: attr(data-title);
+            position: absolute;
+            right: 22px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-45deg);
+            transform-origin: right center;
+            white-space: nowrap;
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            opacity: 0;
+            transition: opacity 0.3s ease, right 0.3s ease;
+            pointer-events: none;
+        }
+
+        .compass-node:hover::before,
+        .compass-node.active::before {
+            opacity: 1;
+            right: 26px;
+        }
+
+        /* Bottom HUD Controls */
+        .hud-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        .location-indicator {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .location-tag {
+            font-size: 0.6rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .location-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            letter-spacing: 0.12em;
+            color: var(--text-light);
+        }
+
+        .scroll-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+            transition: opacity 0.5s ease;
+        }
+
+        .scroll-prompt-text {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+        }
+
+        .scroll-line-indicator {
+            width: 1px;
+            height: 40px;
+            background: rgba(212, 175, 55, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-line-indicator::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gold-primary);
+            animation: scrollPulse 2s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+        }
+
+        @keyframes scrollPulse {
+            0% { top: -100%; }
+            50% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .elevation-readout {
+            font-size: 0.7rem;
+            letter-spacing: 0.25em;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 3D Tracked Trivia Cards Container */
+        #waypoints-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 3;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .trivia-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 380px;
+            max-width: 88vw;
+            background: rgba(7, 11, 22, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            padding: 1.75rem 2rem;
+            color: var(--text-light);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), inset 0 0 25px rgba(212, 175, 55, 0.05);
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+        }
+
+        .trivia-card.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Decorative Corner Accents on Cards */
+        .trivia-card::before,
+        .trivia-card::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-color: var(--gold-primary);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        .trivia-card::before {
+            top: -1px;
+            left: -1px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .trivia-card::after {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 1px 1px 0;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+            padding-bottom: 0.6rem;
+        }
+
+        .card-waypoint-num {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        .card-location-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            color: var(--gold-bright);
+            text-transform: uppercase;
+        }
+
+        .card-question {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: #ffffff;
+            margin-bottom: 1.25rem;
+            font-weight: 400;
+            letter-spacing: 0.03em;
+        }
+
+        .card-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .option-btn {
+            appearance: none;
+            background: rgba(14, 21, 38, 0.55);
+            border: 1px solid rgba(212, 175, 55, 0.22);
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover:not(.disabled) {
+            background: rgba(212, 175, 55, 0.14);
+            border-color: var(--gold-primary);
+            color: #ffffff;
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background: var(--correct-bg);
+            border-color: var(--correct-border);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.25);
+        }
+
+        .option-btn.incorrect {
+            background: var(--wrong-bg);
+            border-color: var(--wrong-border);
+            color: #ffb8b8;
+        }
+
+        .option-btn.disabled {
+            cursor: default;
+        }
+
+        .option-status-indicator {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .option-btn.correct .option-status-indicator,
+        .option-btn.incorrect .option-status-indicator {
+            opacity: 1;
+        }
+
+        /* Connector Line from 3D Anchor to Card */
+        .anchor-dot {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 8px;
+            height: 8px;
+            background: var(--gold-primary);
+            box-shadow: 0 0 10px var(--gold-primary);
+        }
+
+        /* Intro Title Screen Overlay */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            background: radial-gradient(circle at center, rgba(8, 13, 28, 0.78) 0%, rgba(5, 8, 19, 0.96) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.2s;
+        }
+
+        #intro-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .intro-crest-line {
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, var(--gold-primary));
+            margin-bottom: 1.5rem;
+        }
+
+        .intro-overline {
+            font-size: 0.7rem;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+            color: var(--gold-primary);
+            margin-bottom: 1rem;
+        }
+
+        .intro-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            letter-spacing: 0.22em;
+            color: #ffffff;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(212, 175, 55, 0.35);
+        }
+
+        .intro-desc {
+            max-width: 460px;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+
+        .enter-btn {
+            appearance: none;
+            background: transparent;
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-primary);
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            padding: 1rem 2.8rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .enter-btn:hover {
+            background: rgba(212, 175, 55, 0.15);
+            color: #ffffff;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.35);
+            letter-spacing: 0.36em;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            #hud {
+                padding: 1.5rem;
+            }
+            .compass-rail {
+                right: 1.25rem;
+                height: 180px;
+            }
+            .compass-node::before {
+                display: none;
+            }
+            .trivia-card {
+                width: 310px;
+                padding: 1.25rem 1.4rem;
+            }
+            .card-question {
+                font-size: 0.92rem;
+            }
+            .location-name {
+                font-size: 1.1rem;
+            }
+            .elevation-readout {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D WebGL Viewport -->
+    <div id="webgl-container"></div>
+
+    <!-- Vignette Overlay -->
+    <div id="atmosphere-overlay"></div>
+
+    <!-- 3D-Projected Floating Trivia Cards -->
+    <div id="waypoints-layer"></div>
+
+    <!-- Minimalist Architectural HUD -->
+    <div id="hud">
+        <div class="hud-top">
+            <div class="brand-lockup" id="reset-camera-btn" title="Return to Black Lake">
+                <div class="brand-subtitle">Interactive Archival Experience</div>
+                <div class="brand-title">HOGWARTS</div>
+            </div>
+            <div class="hud-stats">
+                <div class="stats-label">Lore Mastery</div>
+                <div class="stats-value"><span id="score-count">0</span> / 5</div>
+            </div>
+        </div>
+
+        <div class="compass-rail" id="compass-rail">
+            <div class="compass-line">
+                <div class="compass-line-fill" id="compass-fill"></div>
+            </div>
+            <!-- Dynamically populated waypoint nodes -->
+        </div>
+
+        <div class="hud-bottom">
+            <div class="location-indicator">
+                <div class="location-tag">Current Sector</div>
+                <div class="location-name" id="hud-location-name">The Black Lake</div>
+            </div>
+
+            <div class="scroll-prompt" id="scroll-prompt">
+                <div class="scroll-prompt-text">Scroll to Ascend</div>
+                <div class="scroll-line-indicator"></div>
+            </div>
+
+            <div class="elevation-readout" id="hud-coordinates">
+                PATH 00.0% &mdash; ALT 012M
+            </div>
+        </div>
+    </div>
+
+    <!-- Initial Cinematic Gate -->
+    <div id="intro-screen">
+        <div class="intro-crest-line"></div>
+        <div class="intro-overline">Scotland Highlands &bull; Nightfall</div>
+        <h1 class="intro-title">WELCOME TO HOGWARTS</h1>
+        <p class="intro-desc">
+            Glide across the moonlit silhouette of the ancient castle grounds. Scroll or drag to navigate the flight path and uncover the secrets along the spires.
+        </p>
+        <button class="enter-btn" id="enter-experience-btn">Begin Flight</button>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. TRIVIA WAYPOINT DATA & CONFIGURATION
+         * ============================================================================
+         */
+        const TRIVIA_WAYPOINTS = [
+            {
+                id: 0,
+                name: "The Black Lake",
+                progress: 0.08,
+                waypointT: 0.135,
+                offset: new THREE.Vector3(0, 5, 0),
+                question: "Which device did Dumbledore use to extinguish the streetlamps of Privet Drive?",
+                options: [
+                    { label: "A) The Deluminator", correct: true },
+                    { label: "B) A Sneakoscope", correct: false },
+                    { label: "C) The Foe-Glass", correct: false }
+                ]
+            },
+            {
+                id: 1,
+                name: "The Viaduct",
+                progress: 0.28,
+                waypointT: 0.335,
+                offset: new THREE.Vector3(-4, 6, 0),
+                question: "What is the core of the legendary Elder Wand?",
+                options: [
+                    { label: "A) Phoenix Feather", correct: false },
+                    { label: "B) Dragon Heartstring", correct: false },
+                    { label: "C) Thestral Tail Hair", correct: true }
+                ]
+            },
+            {
+                id: 2,
+                name: "The Great Hall",
+                progress: 0.50,
+                waypointT: 0.555,
+                offset: new THREE.Vector3(4, 6, 0),
+                question: "Which potion induces extreme euphoria and luck in the consumer?",
+                options: [
+                    { label: "A) Amortentia", correct: false },
+                    { label: "B) Felix Felicis", correct: true },
+                    { label: "C) Veritaserum", correct: false }
+                ]
+            },
+            {
+                id: 3,
+                name: "The Astronomy Tower",
+                progress: 0.72,
+                waypointT: 0.775,
+                offset: new THREE.Vector3(3, 6, 0),
+                question: "What shape does Minerva McGonagall's Patronus take?",
+                options: [
+                    { label: "A) A Silver Doe", correct: false },
+                    { label: "B) A Cat with spectacle markings", correct: true },
+                    { label: "C) A Jack Russell Terrier", correct: false }
+                ]
+            },
+            {
+                id: 4,
+                name: "The Highest Spire",
+                progress: 0.90,
+                waypointT: 0.955,
+                offset: new THREE.Vector3(-3, 5, 0),
+                question: "Which magical object is concealed inside the Golden Snitch bequeathed to Harry?",
+                options: [
+                    { label: "A) The Resurrection Stone", correct: true },
+                    { label: "B) The Cloak of Invisibility", correct: false },
+                    { label: "C) A Time-Turner", correct: false }
+                ]
+            }
+        ];
+
+        /**
+         * ============================================================================
+         * 2. CORE SCENE, CAMERA, RENDERER & ATMOSPHERE
+         * ============================================================================
+         */
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050813);
+        scene.fog = new THREE.FogExp2(0x050813, 0.0025);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1600);
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        /**
+         * ============================================================================
+         * 3. LIGHTING SETUP (MOONLIGHT, AMBIENT & WARM TORCHLIGHT)
+         * ============================================================================
+         */
+        const ambientLight = new THREE.AmbientLight(0x0a1128, 0.8);
+        scene.add(ambientLight);
+
+        // Directional Moonlight casting long sharp shadows
+        const moonLight = new THREE.DirectionalLight(0x4a7c99, 1.5);
+        moonLight.position.set(-220, 320, -180);
+        moonLight.castShadow = true;
+        moonLight.shadow.mapSize.width = 2048;
+        moonLight.shadow.mapSize.height = 2048;
+        moonLight.shadow.camera.near = 50;
+        moonLight.shadow.camera.far = 900;
+        const d = 260;
+        moonLight.shadow.camera.left = -d;
+        moonLight.shadow.camera.right = d;
+        moonLight.shadow.camera.top = d;
+        moonLight.shadow.camera.bottom = -d;
+        moonLight.shadow.bias = -0.0005;
+        scene.add(moonLight);
+
+        // Procedural glowing full moon disk & halo in the distance
+        const moonGroup = new THREE.Group();
+        const moonGeo = new THREE.SphereGeometry(28, 32, 32);
+        const moonMat = new THREE.MeshBasicMaterial({ color: 0xdbeeff, fog: false });
+        const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+        moonGroup.add(moonMesh);
+
+        const haloGeo = new THREE.SphereGeometry(48, 32, 32);
+        const haloMat = new THREE.MeshBasicMaterial({
+            color: 0x4a7c99,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.BackSide,
+            fog: false
+        });
+        moonGroup.add(new THREE.Mesh(haloGeo, haloMat));
+        moonGroup.position.set(-380, 340, -520);
+        scene.add(moonGroup);
+
+        // Warm PointLights around the Castle (Torches, Courtyards, Windows)
+        const torchPositions = [
+            new THREE.Vector3(-45, 58, 35),   // Great Hall Courtyard
+            new THREE.Vector3(60, 42, 95),    // Viaduct Bridge Entrance
+            new THREE.Vector3(10, 115, -10),  // Headmaster's Tower Upper
+            new THREE.Vector3(-48, 95, -45),  // Astronomy Tower Deck
+            new THREE.Vector3(-50, 22, 115),  // Boathouse Dock on the Black Lake
+            new THREE.Vector3(45, 65, -25)    // East Wing Ramparts
+        ];
+
+        const torchLights = [];
+        torchPositions.forEach((pos) => {
+            const pointLight = new THREE.PointLight(0xffc857, 2.0, 150, 1.8);
+            pointLight.position.copy(pos);
+            scene.add(pointLight);
+            torchLights.push(pointLight);
+        });
+
+        /**
+         * ============================================================================
+         * 4. PROCEDURAL TERRAIN & THE BLACK LAKE
+         * ============================================================================
+         */
+        // Procedural Craggy Highland Island
+        const terrainGeo = new THREE.PlaneGeometry(1400, 1400, 140, 140);
+        terrainGeo.rotateX(-Math.PI / 2);
+
+        const posAttr = terrainGeo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const z = posAttr.getZ(i);
+            const distFromCastle = Math.sqrt(x * x + z * z);
+
+            // Multi-layered trigonometric noise for craggy Scottish highlands
+            const n1 = Math.sin(x * 0.025) * Math.cos(z * 0.025) * 14;
+            const n2 = Math.sin(x * 0.06 + z * 0.04) * 6;
+            const n3 = Math.cos(x * 0.13 - z * 0.11) * 2.5;
+            const ridge = Math.abs(Math.sin(x * 0.015 + z * 0.018)) * 12;
+
+            let y = -18;
+
+            if (distFromCastle < 165) {
+                // Steep rocky cliff pedestal supporting Hogwarts
+                const plateauFactor = Math.cos((distFromCastle / 165) * (Math.PI / 2));
+                y = Math.pow(plateauFactor, 0.75) * 44 + n1 * 0.5 + n2 * 0.6 + n3;
+                // Carve a deep chasm under the Viaduct on the right side (x > 25, z > 0)
+                if (x > 30 && x < 120 && z > -20 && z < 150) {
+                    y -= 28 * Math.sin(((x - 30) / 90) * Math.PI);
+                }
+            } else if (distFromCastle > 340) {
+                // Distant surrounding mountain ring on the horizon
+                const ringFactor = Math.min(1, (distFromCastle - 340) / 280);
+                y = ringFactor * 115 + n1 * 2.2 + ridge * 2.5 + n2;
+                // Keep front flight corridor over the Black Lake open
+                if (z > 120 && Math.abs(x) < 220) {
+                    y = -15;
+                }
+            } else {
+                // Lakebed with small rocky islets
+                y = -14 + n1 * 0.4 + n2 * 0.3;
+            }
+
+            posAttr.setY(i, y);
+        }
+        terrainGeo.computeVertexNormals();
+
+        const terrainMat = new THREE.MeshStandardMaterial({
+            color: 0x111522,
+            roughness: 0.92,
+            metalness: 0.08,
+            flatShading: true
+        });
+        const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+        terrainMesh.receiveShadow = true;
+        terrainMesh.castShadow = true;
+        scene.add(terrainMesh);
+
+        // Procedural Subtle Wave Normal Map for the Black Lake
+        function createWaterNormalTexture() {
+            const size = 256;
+            const data = new Uint8Array(size * size * 4);
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const idx = (y * size + x) * 4;
+                    const nx = Math.sin(x * 0.15) * Math.cos(y * 0.15) * 18;
+                    const ny = Math.cos(x * 0.12 + y * 0.12) * 18;
+                    data[idx] = 128 + nx;
+                    data[idx + 1] = 128 + ny;
+                    data[idx + 2] = 255;
+                    data[idx + 3] = 255;
+                }
+            }
+            const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(45, 45);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        const waterNormalMap = createWaterNormalTexture();
+        const waterGeo = new THREE.PlaneGeometry(1600, 1600);
+        waterGeo.rotateX(-Math.PI / 2);
+        const waterMat = new THREE.MeshPhysicalMaterial({
+            color: 0x02040a,
+            roughness: 0.08,
+            metalness: 0.15,
+            transmission: 0.9,
+            reflectivity: 0.95,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.06,
+            normalMap: waterNormalMap,
+            normalScale: new THREE.Vector2(0.15, 0.15)
+        });
+        const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+        waterMesh.position.y = 0;
+        waterMesh.receiveShadow = true;
+        scene.add(waterMesh);
+
+        /**
+         * ============================================================================
+         * 5. PROCEDURAL HOGWARTS CASTLE SILHOUETTE & GLOWING WINDOWS
+         * ============================================================================
+         */
+        const castleGroup = new THREE.Group();
+        scene.add(castleGroup);
+
+        const castleWallMat = new THREE.MeshStandardMaterial({
+            color: 0x1b1f2b,
+            roughness: 0.85,
+            metalness: 0.15
+        });
+
+        const castleRoofMat = new THREE.MeshStandardMaterial({
+            color: 0x101420,
+            roughness: 0.65,
+            metalness: 0.25
+        });
+
+        const windowGlowMat = new THREE.MeshStandardMaterial({
+            color: 0xffc857,
+            emissive: 0xffb732,
+            emissiveIntensity: 3.2,
+            roughness: 0.2
+        });
+
+        // Helper: Build cylindrical tower with conical spire, battlements, and lit windows
+        function buildTower(x, yBase, z, radius, height, roofHeight, windowRows = 4, hasTurrets = false) {
+            const tower = new THREE.Group();
+            tower.position.set(x, yBase, z);
+
+            // Main cylindrical shaft
+            const bodyGeo = new THREE.CylinderGeometry(radius * 0.95, radius, height, 16);
+            const bodyMesh = new THREE.Mesh(bodyGeo, castleWallMat);
+            bodyMesh.position.y = height / 2;
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            tower.add(bodyMesh);
+
+            // Corbel ring at the top of shaft
+            const ringGeo = new THREE.CylinderGeometry(radius * 1.06, radius * 0.96, 2.5, 16);
+            const ringMesh = new THREE.Mesh(ringGeo, castleWallMat);
+            ringMesh.position.y = height - 1;
+            tower.add(ringMesh);
+
+            // Steep conical spire roof
+            const spireGeo = new THREE.ConeGeometry(radius * 1.12, roofHeight, 16);
+            const spireMesh = new THREE.Mesh(spireGeo, castleRoofMat);
+            spireMesh.position.y = height + roofHeight / 2;
+            spireMesh.castShadow = true;
+            tower.add(spireMesh);
+
+            // Sub-turrets clinging to upper shaft for Gothic silhouette
+            if (hasTurrets) {
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2 + 0.4;
+                    const tx = Math.cos(angle) * radius;
+                    const tz = Math.sin(angle) * radius;
+                    const tH = height * 0.35;
+                    const subBody = new THREE.Mesh(
+                        new THREE.CylinderGeometry(radius * 0.28, radius * 0.22, tH, 10),
+                        castleWallMat
+                    );
+                    subBody.position.set(tx, height * 0.78, tz);
+                    tower.add(subBody);
+
+                    const subRoof = new THREE.Mesh(
+                        new THREE.ConeGeometry(radius * 0.33, roofHeight * 0.45, 10),
+                        castleRoofMat
+                    );
+                    subRoof.position.set(tx, height * 0.78 + tH / 2 + (roofHeight * 0.22), tz);
+                    tower.add(subRoof);
+                }
+            }
+
+            // Glowing vertical slit windows attached around the cylinder
+            const winGeo = new THREE.PlaneGeometry(1.1, 2.6);
+            const radialSlots = Math.max(6, Math.floor(radius * 0.75));
+            for (let row = 0; row < windowRows; row++) {
+                const wy = height * 0.22 + (row / windowRows) * (height * 0.65);
+                for (let s = 0; s < radialSlots; s++) {
+                    // Pseudo-random deterministic pattern so windows feel organically lit
+                    if ((row * 7 + s * 13 + Math.floor(x)) % 3 === 0) {
+                        const theta = (s / radialSlots) * Math.PI * 2;
+                        const winMesh = new THREE.Mesh(winGeo, windowGlowMat);
+                        const rOffset = radius * 0.98 + 0.15;
+                        winMesh.position.set(
+                            Math.cos(theta) * rOffset,
+                            wy,
+                            Math.sin(theta) * rOffset
+                        );
+                        winMesh.rotation.y = -theta + Math.PI / 2;
+                        tower.add(winMesh);
+                    }
+                }
+            }
+
+            castleGroup.add(tower);
+            return tower;
+        }
+
+        // Helper: Build Gabled Hall (Box + Steep 4-Sided Pitched Roof + Tall Gothic Windows)
+        function buildGabledHall(x, yBase, z, width, height, length, roofHeight, rotationY = 0, addLancetWindows = true) {
+            const hall = new THREE.Group();
+            hall.position.set(x, yBase, z);
+            hall.rotation.y = rotationY;
+
+            // Hall Body
+            const boxGeo = new THREE.BoxGeometry(width, height, length);
+            const boxMesh = new THREE.Mesh(boxGeo, castleWallMat);
+            boxMesh.position.y = height / 2;
+            boxMesh.castShadow = true;
+            boxMesh.receiveShadow = true;
+            hall.add(boxMesh);
+
+            // Pitched Roof using a 4-radial-segment ConeGeometry scaled along the hall length
+            const roofGeo = new THREE.ConeGeometry(1, roofHeight, 4);
+            roofGeo.rotateY(Math.PI / 4);
+            const roofMesh = new THREE.Mesh(roofGeo, castleRoofMat);
+            roofMesh.scale.set(width * 0.74, 1, length * 0.74);
+            roofMesh.position.y = height + roofHeight / 2;
+            roofMesh.castShadow = true;
+            hall.add(roofMesh);
+
+            // Corner Buttresses & Pinnacles
+            const buttressGeo = new THREE.BoxGeometry(2.2, height * 1.08, 2.2);
+            const spireletGeo = new THREE.ConeGeometry(1.5, 7, 4);
+            spireletGeo.rotateY(Math.PI / 4);
+
+            const numBays = Math.max(3, Math.floor(length / 12));
+            for (let i = 0; i <= numBays; i++) {
+                const bz = -length / 2 + (i / numBays) * length;
+                [-1, 1].forEach((side) => {
+                    const bx = side * (width / 2 + 0.6);
+                    const bMesh = new THREE.Mesh(buttressGeo, castleWallMat);
+                    bMesh.position.set(bx, height * 0.54, bz);
+                    hall.add(bMesh);
+
+                    const sMesh = new THREE.Mesh(spireletGeo, castleRoofMat);
+                    sMesh.position.set(bx, height * 1.08 + 3.5, bz);
+                    hall.add(sMesh);
+                });
+            }
+
+            // Tall Glowing Gothic Hall Windows along both sides
+            if (addLancetWindows) {
+                const lancetGeo = new THREE.PlaneGeometry(2.2, height * 0.52);
+                for (let i = 0; i < numBays; i++) {
+                    const wz = -length / 2 + ((i + 0.5) / numBays) * length;
+                    [-1, 1].forEach((side) => {
+                        const win = new THREE.Mesh(lancetGeo, windowGlowMat);
+                        win.position.set(side * (width / 2 + 0.15), height * 0.55, wz);
+                        win.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+                        hall.add(win);
+                    });
+                }
+
+                // Grand Rose/Lancet Window on the front gable
+                const frontWinGeo = new THREE.PlaneGeometry(width * 0.42, height * 0.58);
+                const frontWin = new THREE.Mesh(frontWinGeo, windowGlowMat);
+                frontWin.position.set(0, height * 0.55, length / 2 + 0.15);
+                hall.add(frontWin);
+            }
+
+            castleGroup.add(hall);
+            return hall;
+        }
+
+        // --- ASSEMBLE ICONIC HOGWARTS SILHOUETTE ---
+
+        // 1. THE GREAT HALL & ENTRANCE COURTYARD (West-Front Wing)
+        buildGabledHall(-45, 34, 42, 26, 30, 68, 22, 0.12, true);
+        // Great Hall Cupola Spire on the ridge
+        buildTower(-45, 76, 42, 2.8, 12, 16, 1, false);
+        // Courtyard Bell Towers flanking the Great Hall
+        buildTower(-62, 32, 74, 5.5, 42, 22, 4, false);
+        buildTower(-28, 32, 78, 5.0, 38, 20, 3, false);
+
+        // 2. THE GRAND STAIRCASE & HEADMASTER'S CENTRAL CITADEL (Center-High)
+        buildTower(8, 38, -18, 19, 98, 52, 8, true); // Massive Central Keep + Headmaster's Spire
+        buildTower(24, 50, -8, 6.5, 78, 32, 6, false);
+        buildTower(-10, 48, -28, 7.5, 74, 30, 5, false);
+        buildGabledHall(8, 38, 16, 22, 28, 46, 18, 0, true); // Connecting Nave
+
+        // 3. THE ASTRONOMY TOWER (Tallest Western Flanking Spire)
+        buildTower(-56, 36, -42, 12.5, 86, 44, 7, true);
+        buildTower(-72, 32, -32, 5.5, 58, 24, 4, false);
+        buildGabledHall(-32, 38, -30, 16, 24, 42, 15, Math.PI / 3, true);
+
+        // 4. EAST WING, CLOCK TOWER & QUADRANGLE KEEP
+        buildGabledHall(46, 34, -22, 24, 32, 56, 20, -0.15, true);
+        buildTower(64, 30, -45, 9, 66, 32, 5, true);
+        buildTower(42, 36, 12, 8, 56, 26, 4, false);
+        buildTower(28, 32, -55, 7, 62, 28, 5, false);
+
+        // 5. THE VIADUCT (Long Stone Bridge with Arched Piers spanning the Eastern Chasm)
+        const viaductGroup = new THREE.Group();
+        viaductGroup.position.set(58, 0, 72);
+        viaductGroup.rotation.y = -0.52;
+
+        const bridgeLength = 128;
+        const deckHeight = 42;
+        const deckGeo = new THREE.BoxGeometry(9, 4.5, bridgeLength);
+        const deckMesh = new THREE.Mesh(deckGeo, castleWallMat);
+        deckMesh.position.y = deckHeight;
+        deckMesh.castShadow = true;
+        deckMesh.receiveShadow = true;
+        viaductGroup.add(deckMesh);
+
+        // Parapet walls with glowing braziers along the Viaduct
+        const parapetGeo = new THREE.BoxGeometry(1.0, 2.2, bridgeLength);
+        [-3.9, 3.9].forEach((px) => {
+            const pMesh = new THREE.Mesh(parapetGeo, castleWallMat);
+            pMesh.position.set(px, deckHeight + 2.8, 0);
+            viaductGroup.add(pMesh);
+        });
+
+        const numPiers = 8;
+        const pierGeo = new THREE.BoxGeometry(7.2, deckHeight + 15, 5.5);
+        for (let i = 0; i < numPiers; i++) {
+            const pz = -bridgeLength / 2 + (i / (numPiers - 1)) * bridgeLength;
+            const pierMesh = new THREE.Mesh(pierGeo, castleWallMat);
+            pierMesh.position.set(0, (deckHeight - 15) / 2, pz);
+            pierMesh.castShadow = true;
+            pierMesh.receiveShadow = true;
+            viaductGroup.add(pierMesh);
+
+            // Glowing torch lamp at each bridge pier
+            if (i % 2 === 0) {
+                const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.8, 1.1), windowGlowMat);
+                lamp.position.set(4.1, deckHeight + 4.2, pz);
+                viaductGroup.add(lamp);
+            }
+        }
+        castleGroup.add(viaductGroup);
+
+        // Viaduct Gatehouse Towers at both ends
+        buildTower(24, 34, 22, 7.5, 44, 22, 3, false);
+        buildTower(92, 22, 124, 7.0, 36, 18, 3, false);
+
+        // 6. THE BOATHOUSE AT WATER LEVEL (Nestled below the Great Hall cliff)
+        buildGabledHall(-48, 0, 114, 14, 11, 22, 9, 0.1, true);
+
+        /**
+         * ============================================================================
+         * 6. MAGICAL PARTICLE MOTES (2,000 DRIFTING GOLDEN SPECKS)
+         * ============================================================================
+         */
+        const particleCount = 2000;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleSpeeds = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            particlePositions[i * 3] = (Math.random() - 0.5) * 650;
+            particlePositions[i * 3 + 1] = Math.random() * 260;
+            particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 650;
+            particleSpeeds[i] = 0.08 + Math.random() * 0.22;
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+        // Create a crisp soft circular glow sprite procedurally via Canvas
+        function createMoteSprite() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            grad.addColorStop(0, 'rgba(255, 240, 190, 1)');
+            grad.addColorStop(0.4, 'rgba(212, 175, 55, 0.6)');
+            grad.addColorStop(1, 'rgba(212, 175, 55, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 32, 32);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffd269,
+            size: 3.2,
+            map: createMoteSprite(),
+            transparent: true,
+            opacity: 0.85,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        /**
+         * ============================================================================
+         * 7. FLIGHT CAMERA SPLINE PATH (THREE.CatmullRomCurve3)
+         * ============================================================================
+         */
+        const splinePoints = [
+            new THREE.Vector3(0, 8, 355),       // Start low skimming the Black Lake
+            new THREE.Vector3(32, 16, 265),     // Waypoint 1: The Black Lake
+            new THREE.Vector3(90, 32, 185),     // Banking right toward the Viaduct chasm
+            new THREE.Vector3(106, 50, 112),    // Waypoint 2: Swooping over the Viaduct
+            new THREE.Vector3(48, 66, 72),      // Crossing the courtyard
+            new THREE.Vector3(-80, 78, 52),     // Waypoint 3: Circling the Great Hall
+            new THREE.Vector3(-120, 102, -5),   // Ascending the western cliffs
+            new THREE.Vector3(-72, 130, -62),   // Waypoint 4: The Astronomy Tower
+            new THREE.Vector3(-18, 162, -92),   // Spiraling behind the North Keep
+            new THREE.Vector3(20, 184, -30),    // Waypoint 5: The Highest Spire
+            new THREE.Vector3(42, 198, 25)      // Final overlook above the entire castle
+        ];
+
+        const cameraSpline = new THREE.CatmullRomCurve3(splinePoints, false, 'catmullrom', 0.5);
+
+        // Compute exact 3D waypoint coordinates directly along the flight spline look-ahead
+        // so every marker & question card sits naturally in the upper-middle of the camera view
+        TRIVIA_WAYPOINTS.forEach((wp) => {
+            wp.position = cameraSpline.getPointAt(wp.waypointT).add(wp.offset);
+        });
+
+        /**
+         * ============================================================================
+         * 8. FLOATING 3D TRIVIA WAYPOINTS & UI PROJECTION
+         * ============================================================================
+         */
+        const waypointsLayer = document.getElementById('waypoints-layer');
+        const compassRail = document.getElementById('compass-rail');
+        const scoreCountEl = document.getElementById('score-count');
+        const waypointObjects = [];
+        let currentScore = 0;
+
+        const markerGeo = new THREE.OctahedronGeometry(2.6, 0);
+        const markerRingGeo = new THREE.RingGeometry(3.6, 4.1, 32);
+
+        TRIVIA_WAYPOINTS.forEach((wp, index) => {
+            // 1. 3D Glowing Diamond Marker in Scene
+            const markerGroup = new THREE.Group();
+            markerGroup.position.copy(wp.position);
+
+            const coreMat = new THREE.MeshBasicMaterial({
+                color: 0xffdf78,
+                wireframe: false
+            });
+            const coreMesh = new THREE.Mesh(markerGeo, coreMat);
+            markerGroup.add(coreMesh);
+
+            const wireMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.6
+            });
+            const wireMesh = new THREE.Mesh(new THREE.OctahedronGeometry(3.8, 0), wireMat);
+            markerGroup.add(wireMesh);
+
+            const haloRingMat = new THREE.MeshBasicMaterial({
+                color: 0xd4af37,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.45
+            });
+            const haloRing = new THREE.Mesh(markerRingGeo, haloRingMat);
+            markerGroup.add(haloRing);
+
+            scene.add(markerGroup);
+
+            // 2. Build Glassmorphism DOM Card
+            const cardEl = document.createElement('div');
+            cardEl.className = 'trivia-card';
+            cardEl.innerHTML = `
+                <div class="anchor-dot"></div>
+                <div class="card-header">
+                    <span class="card-waypoint-num">Waypoint 0${index + 1}</span>
+                    <span class="card-location-title">${wp.name}</span>
+                </div>
+                <h2 class="card-question">${wp.question}</h2>
+                <div class="card-options">
+                    ${wp.options.map((opt, oIdx) => `
+                        <button class="option-btn" data-wp="${index}" data-opt="${oIdx}">
+                            <span>${opt.label}</span>
+                            <span class="option-status-indicator">${opt.correct ? 'Verified' : 'Incorrect'}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            waypointsLayer.appendChild(cardEl);
+
+            // Handle Trivia Answer Selection
+            const optionButtons = cardEl.querySelectorAll('.option-btn');
+            optionButtons.forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (btn.classList.contains('disabled')) return;
+
+                    const optIdx = parseInt(btn.getAttribute('data-opt'), 10);
+                    const isCorrect = wp.options[optIdx].correct;
+
+                    optionButtons.forEach((b, i) => {
+                        b.classList.add('disabled');
+                        if (wp.options[i].correct) {
+                            b.classList.add('correct');
+                        }
+                    });
+
+                    if (isCorrect) {
+                        currentScore++;
+                        scoreCountEl.textContent = currentScore;
+                        coreMat.color.setHex(0x2ecc71);
+                        gsap.fromTo(scoreCountEl, { scale: 1.5, color: '#fff' }, { scale: 1, color: '#d4af37', duration: 0.6 });
+                    } else {
+                        btn.classList.add('incorrect');
+                        coreMat.color.setHex(0xe74c3c);
+                    }
+                });
+            });
+
+            // 3. Create Right-Side Compass Quick-Jump Node
+            const compassNode = document.createElement('div');
+            compassNode.className = 'compass-node';
+            compassNode.setAttribute('data-title', wp.name);
+            compassNode.addEventListener('click', () => {
+                gsap.to(scrollState, {
+                    target: wp.progress,
+                    duration: 1.8,
+                    ease: "power2.inOut"
+                });
+            });
+            compassRail.appendChild(compassNode);
+
+            waypointObjects.push({
+                data: wp,
+                group: markerGroup,
+                coreMesh,
+                wireMesh,
+                haloRing,
+                cardEl,
+                compassNode
+            });
+        });
+
+        /**
+         * ============================================================================
+         * 9. VIRTUAL SMOOTH SCROLL & TOUCH NAVIGATION
+         * ============================================================================
+         */
+        const scrollState = {
+            target: 0.0,
+            current: 0.0
+        };
+
+        const mouseParallax = {
+            targetX: 0,
+            targetY: 0,
+            currentX: 0,
+            currentY: 0
+        };
+
+        let experienceStarted = false;
+        const introScreen = document.getElementById('intro-screen');
+        const enterBtn = document.getElementById('enter-experience-btn');
+        const scrollPromptEl = document.getElementById('scroll-prompt');
+        const hudLocationEl = document.getElementById('hud-location-name');
+        const hudCoordsEl = document.getElementById('hud-coordinates');
+        const compassFillEl = document.getElementById('compass-fill');
+
+        function startExperience() {
+            if (experienceStarted) return;
+            experienceStarted = true;
+            introScreen.classList.add('hidden');
+            gsap.to(scrollState, {
+                target: 0.08,
+                duration: 2.8,
+                ease: "power3.out"
+            });
+        }
+
+        enterBtn.addEventListener('click', startExperience);
+
+        document.getElementById('reset-camera-btn').addEventListener('click', () => {
+            gsap.to(scrollState, {
+                target: 0.0,
+                duration: 2.2,
+                ease: "power2.inOut"
+            });
+        });
+
+        // Wheel Scroll Handler
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (!experienceStarted) startExperience();
+
+            const delta = e.deltaY * 0.00038;
+            scrollState.target = Math.max(0.0, Math.min(1.0, scrollState.target + delta));
+
+            if (scrollState.target > 0.15) {
+                scrollPromptEl.style.opacity = '0';
+            } else {
+                scrollPromptEl.style.opacity = '1';
+            }
+        }, { passive: false });
+
+        // Touch Drag Handler
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            // Allow tapping inside trivia cards without hijacking touch
+            if (!e.target.closest('.option-btn')) {
+                e.preventDefault();
+            }
+            if (!experienceStarted) startExperience();
+
+            if (e.touches.length > 0) {
+                const currentY = e.touches[0].clientY;
+                const deltaY = touchStartY - currentY;
+                touchStartY = currentY;
+
+                scrollState.target = Math.max(0.0, Math.min(1.0, scrollState.target + deltaY * 0.0012));
+                if (scrollState.target > 0.15) {
+                    scrollPromptEl.style.opacity = '0';
+                }
+            }
+        }, { passive: false });
+
+        // Subtle Mouse Camera Parallax
+        window.addEventListener('mousemove', (e) => {
+            mouseParallax.targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseParallax.targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        // Keyboard Arrow Support
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                if (!experienceStarted) startExperience();
+                scrollState.target = Math.min(1.0, scrollState.target + 0.04);
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                scrollState.target = Math.max(0.0, scrollState.target - 0.04);
+            }
+        });
+
+        /**
+         * ============================================================================
+         * 10. RENDER LOOP, SPLINE INTERPOLATION & 3D->2D DOM PROJECTION
+         * ============================================================================
+         */
+        const projVector = new THREE.Vector3();
+        const castleFocalCenter = new THREE.Vector3(0, 72, 10);
+        const blendedLookTarget = new THREE.Vector3();
+        const clock = new THREE.Clock();
+        const VISIBILITY_DISTANCE_THRESHOLD = 95;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // 1. Momentum-based Lerp for Flight Progress
+            scrollState.current += (scrollState.target - scrollState.current) * 0.05;
+            const progress = Math.max(0.0, Math.min(1.0, scrollState.current));
+
+            // 2. Smooth Mouse Parallax Lerp
+            mouseParallax.currentX += (mouseParallax.targetX - mouseParallax.currentX) * 0.05;
+            mouseParallax.currentY += (mouseParallax.targetY - mouseParallax.currentY) * 0.05;
+
+            // 3. Position Camera along CatmullRomCurve3 Spline
+            const pos = cameraSpline.getPointAt(progress);
+            const lookAtPos = cameraSpline.getPointAt(Math.min(1.0, progress + 0.055));
+
+            camera.position.copy(pos);
+            // Add subtle atmospheric floating sway
+            camera.position.x += mouseParallax.currentX * 3.5;
+            camera.position.y += -mouseParallax.currentY * 2.5 + Math.sin(elapsedTime * 1.2) * 0.45;
+
+            // Blend spline tangent look-ahead with castle focal center and slight downward pitch bias
+            // so the camera frames both the castle and the waypoints comfortably in the center of the screen
+            blendedLookTarget.copy(lookAtPos).lerp(castleFocalCenter, 0.18);
+            blendedLookTarget.y -= 5.0;
+            camera.lookAt(blendedLookTarget);
+            camera.updateMatrixWorld();
+
+            // 4. Animate Upward-Drifting Magical Dust Motes
+            const pAttr = particleGeo.attributes.position;
+            for (let i = 0; i < particleCount; i++) {
+                let py = pAttr.getY(i) + particleSpeeds[i];
+                if (py > 250) py = 2;
+                pAttr.setY(i, py);
+            }
+            pAttr.needsUpdate = true;
+            particleSystem.rotation.y = elapsedTime * 0.012;
+
+            // 5. Subtle Flicker on Castle Torch Lights & Water Ripples
+            torchLights.forEach((light, idx) => {
+                light.intensity = 1.85 + Math.sin(elapsedTime * 5.5 + idx * 2.1) * 0.25;
+            });
+            waterNormalMap.offset.x = elapsedTime * 0.015;
+            waterNormalMap.offset.y = elapsedTime * 0.01;
+
+            // 6. Update 3D Waypoints & Project 2D Screen Coordinates for Trivia Cards
+            let closestSectorName = TRIVIA_WAYPOINTS[0].name;
+            let minSectorDist = Infinity;
+
+            waypointObjects.forEach((wpObj) => {
+                // Pulse & rotate 3D diamond marker
+                const scalePulse = 1 + Math.sin(elapsedTime * 3.0 + wpObj.data.id) * 0.18;
+                wpObj.coreMesh.scale.setScalar(scalePulse);
+                wpObj.coreMesh.rotation.y = elapsedTime * 1.4;
+                wpObj.wireMesh.rotation.y = -elapsedTime * 0.8;
+                wpObj.wireMesh.rotation.x = elapsedTime * 0.5;
+                wpObj.haloRing.lookAt(camera.position);
+
+                // Distance check from camera to 3D waypoint
+                const distanceToCam = camera.position.distanceTo(wpObj.data.position);
+
+                if (distanceToCam < minSectorDist) {
+                    minSectorDist = distanceToCam;
+                    closestSectorName = wpObj.data.name;
+                }
+
+                // Highlight corresponding compass node
+                if (Math.abs(progress - wpObj.data.progress) < 0.09) {
+                    wpObj.compassNode.classList.add('active');
+                } else {
+                    wpObj.compassNode.classList.remove('active');
+                }
+
+                // Project 3D world position to 2D normalized device coordinates (-1 to +1)
+                projVector.copy(wpObj.data.position);
+                projVector.project(camera);
+
+                // Check that waypoint is in front of the camera frustum (projVector.z < 1)
+                const isInFront = projVector.z > 0.0 && projVector.z < 1.0;
+                const screenX = (projVector.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY = (-(projVector.y * 0.5) + 0.5) * window.innerHeight;
+
+                // Keep card centered on the 3D marker and well above the bottom HUD
+                const cardHalfWidth = Math.min(190, window.innerWidth * 0.44);
+                const clampedX = Math.max(cardHalfWidth + 20, Math.min(window.innerWidth - cardHalfWidth - 20, screenX));
+                const clampedY = Math.max(110, Math.min(window.innerHeight - 230, screenY));
+
+                wpObj.cardEl.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0) translate(-50%, -50%)`;
+
+                const progressDelta = Math.abs(progress - wpObj.data.progress);
+                if (isInFront && (distanceToCam < VISIBILITY_DISTANCE_THRESHOLD || progressDelta < 0.075)) {
+                    wpObj.cardEl.classList.add('visible');
+                } else {
+                    wpObj.cardEl.classList.remove('visible');
+                }
+            });
+
+            // 7. Update Architectural HUD Readouts
+            hudLocationEl.textContent = closestSectorName;
+            compassFillEl.style.height = `${(progress * 100).toFixed(1)}%`;
+            const pctStr = (progress * 100).toFixed(1).padStart(4, '0');
+            const altStr = Math.round(camera.position.y).toString().padStart(3, '0');
+            hudCoordsEl.innerHTML = `PATH ${pctStr}% &mdash; ALT ${altStr}M`;
+
+            renderer.render(scene, camera);
+        }
+
+        /**
+         * ============================================================================
+         * 11. RESPONSIVE WINDOW RESIZE HANDLER
+         * ============================================================================
+         */
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+
+        // Start 60FPS WebGL Loop on Load
+        window.onload = function () {
+            animate();
+        };
+    </script>
+</body>
+</html>
