@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mystic Falls Runner - TVD Endless Runner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;500;700;900&family=Dancing+Script:wght@700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --crimson: #8b0000;
+            --bright-blood: #dc143c;
+            --midnight: #0a0a14;
+            --mystic-purple: #4a154b;
+            --parchment: #e6d2b5;
+        }
+
+        body {
+            background-color: #050509;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(139, 0, 0, 0.18) 0%, transparent 60%),
+                radial-gradient(circle at 85% 85%, rgba(74, 21, 75, 0.25) 0%, transparent 50%),
+            linear-gradient(to bottom, #050509 0%, #0d0a1a 100%);
+        font-family: 'Montserrat', sans-serif;
+        color: #e2e8f0;
+        overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .tvd-title {
+            font-family: 'Cinzel Decorative', serif;
+            text-shadow: 0 0 15px rgba(220, 20, 60, 0.8), 0 4px 8px rgba(0, 0, 0, 0.95);
+            letter-spacing: 0.08em;
+        }
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
+        .font-sans {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Gothic Frame & Borders */
+        .gothic-frame {
+            border: 2px solid #4a0404;
+            box-shadow: 
+                0 0 35px rgba(139, 0, 0, 0.35),
+                inset 0 0 25px rgba(0, 0, 0, 0.9);
+            background: rgba(10, 8, 18, 0.92);
+        }
+
+        /* Character Card Styling */
+        .char-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(139, 0, 0, 0.2);
+            background: rgba(15, 10, 20, 0.6);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .char-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(220, 20, 60, 0.5);
+            background: rgba(25, 10, 25, 0.8);
+            box-shadow: 0 8px 20px -5px rgba(220, 20, 60, 0.2);
+        }
+
+        .char-card.selected {
+            border-color: #dc2626;
+            background: linear-gradient(180deg, rgba(37, 9, 18, 0.9) 0%, rgba(56, 11, 25, 0.9) 100%);
+            box-shadow: 0 0 20px rgba(220, 20, 60, 0.4), inset 0 0 10px rgba(220, 20, 60, 0.2);
+        }
+        
+        .char-card-canvas-wrap {
+            background: radial-gradient(circle, rgba(40,20,30,0.8) 0%, rgba(10,5,15,0.9) 100%);
+            border: 1px solid rgba(220, 20, 60, 0.15);
+        }
+        
+        .char-card.selected .char-card-canvas-wrap {
+            border-color: rgba(220, 20, 60, 0.6);
+            box-shadow: inset 0 0 15px rgba(220, 20, 60, 0.3);
+        }
+
+        /* Glowing Special Birthday Button */
+        @keyframes pulse-blood-gold {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 15px #dc2626, 0 0 30px #9333ea, inset 0 0 10px rgba(255, 215, 0, 0.5);
+            }
+            50% {
+                transform: scale(1.06);
+                box-shadow: 0 0 25px #ef4444, 0 0 50px #a855f7, inset 0 0 15px rgba(255, 215, 0, 0.8);
+            }
+        }
+
+        .special-msg-btn {
+            animation: pulse-blood-gold 1.8s infinite ease-in-out;
+            background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #3b0764 100%);
+            border: 2px solid #fbbf24;
+            color: #fef3c7;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        /* Ancient Weathered Parchment Modal */
+        .parchment-paper {
+            background-color: #dfc8a2;
+            background-image: 
+                /* Blood splatter accents */
+                radial-gradient(circle at 86% 16%, rgba(125, 12, 12, 0.78) 0%, rgba(125, 12, 12, 0.5) 2.5%, transparent 4.5%),
+                radial-gradient(circle at 83% 20%, rgba(110, 10, 10, 0.65) 0%, transparent 2%),
+                radial-gradient(circle at 88% 21%, rgba(139, 0, 0, 0.5) 0%, transparent 1.5%),
+                radial-gradient(circle at 12% 84%, rgba(115, 15, 15, 0.65) 0%, rgba(90, 10, 10, 0.3) 4%, transparent 7%),
+                radial-gradient(circle at 17% 80%, rgba(139, 0, 0, 0.55) 0%, transparent 2%),
+                /* Age spots & weathered vignette */
+                radial-gradient(circle at 30% 40%, rgba(139, 90, 43, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 70% 65%, rgba(101, 67, 33, 0.16) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(244, 228, 198, 0.5) 0%, rgba(196, 164, 118, 0.85) 68%, rgba(105, 70, 35, 0.95) 100%);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.95),
+                0 0 40px rgba(139, 0, 0, 0.5),
+                inset 0 0 65px rgba(65, 35, 10, 0.85),
+                inset 0 0 18px rgba(40, 20, 5, 0.95);
+            border: 3px solid #4a2c11;
+            position: relative;
+        }
+
+        .parchment-paper::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid rgba(74, 44, 17, 0.45);
+            pointer-events: none;
+        }
+
+        .cursive-ink {
+            font-family: 'Dancing Script', cursive;
+            color: #2b1717;
+            text-shadow: 
+                1px 1px 0px rgba(139, 0, 0, 0.25),
+                0 0 2px rgba(43, 23, 23, 0.3);
+            filter: contrast(1.1);
+        }
+
+        .wax-seal {
+            background: radial-gradient(circle at 35% 35%, #b91c1c, #7f1d1d 60%, #450a0a 100%);
+            box-shadow: 
+                0 4px 10px rgba(0,0,0,0.7),
+                inset 0 2px 5px rgba(255,255,255,0.25),
+                inset 0 -3px 6px rgba(0,0,0,0.6);
+            border: 2px dashed rgba(69, 10, 10, 0.7);
+        }
+
+        /* Crisp Pixel Art Canvas Rendering */
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Custom Gothic Buttons */
+        .btn-vampire {
+            background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%);
+            border: 1px solid #b91c1c;
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4), inset 0 1px 0 rgba(255, 100, 100, 0.2);
+            transition: all 0.3s ease;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.1em;
+        }
+        .btn-vampire:hover {
+            background: linear-gradient(180deg, #991b1b 0%, #5a0c0c 100%);
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(220, 20, 60, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn-vampire:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(139, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 md:p-6">
+
+    <!-- Top Header -->
+    <header class="w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 mb-2 z-10">
+        <div class="flex items-center gap-3">
+            <!-- Daylight Ring / Salvatore Crest SVG -->
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-950 via-slate-900 to-purple-950 border-2 border-red-700 flex items-center justify-center shadow-lg shadow-red-950/60">
+                <svg class="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="tvd-title text-xl sm:text-2xl md:text-3xl font-black text-red-600 tracking-wider">
+                    MYSTIC FALLS RUNNER
+                </h1>
+                <p class="font-sans text-[10px] sm:text-xs text-purple-300/80 tracking-widest uppercase font-semibold">
+                    The Vampire Diaries Edition • Target: Beat 7305
+                </p>
+            </div>
+        </div>
+
+        <!-- Audio & Quick Help Bar -->
+        <div class="flex items-center gap-3">
+            <button id="soundToggleBtn" class="font-sans px-3 py-1.5 rounded bg-slate-900/80 border border-purple-900/50 hover:bg-slate-800 text-xs text-purple-200 hover:border-red-700 transition flex items-center gap-2 font-medium tracking-wide">
+                <svg id="soundIconOn" class="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2.586l3.707 3.707A.996.996 0 0015 19V5a.996.996 0 00-1.707-.707L9.586 10H7a2 2 0 00-2 2z"></path></svg>
+                <svg id="soundIconOff" class="w-4 h-4 text-red-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                <span id="soundLabel">SFX ON</span>
+            </button>
+            <button id="changeCharTopBtn" class="font-sans hidden px-3 py-1.5 rounded bg-slate-900/80 border border-red-900/50 hover:bg-red-950/60 text-xs text-red-200 transition font-medium tracking-wide">
+                Switch Vampire
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="relative w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-auto">
+        
+        <div class="relative w-full aspect-[2/1] max-h-[500px] gothic-frame rounded-xl overflow-hidden">
+            
+            <!-- Main Game Canvas -->
+            <canvas id="gameCanvas" width="900" height="450" class="w-full h-full block"></canvas>
+
+            <!-- Live HUD Overlay -->
+            <div id="hudOverlay" class="absolute top-0 left-0 right-0 p-3 sm:p-5 flex items-start justify-between pointer-events-none z-10">
+                <!-- Left: Active Character Pill -->
+                <div class="flex items-center gap-2.5 bg-black/80 border border-red-900/50 px-3 py-1.5 rounded-md backdrop-blur-md shadow-lg font-sans">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse shadow-[0_0_8px_#dc2626]"></span>
+                    <span id="hudCharName" class="text-xs sm:text-sm font-bold tracking-widest text-gray-100 uppercase">STEFAN</span>
+                    <span id="hudSpeedBadge" class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-200 border border-purple-700/30 font-medium">1.0x</span>
+                </div>
+
+                <!-- Center: Special 7350 Birthday Trigger Button (Appears at 7350) -->
+                <div id="specialBtnWrapper" class="hidden pointer-events-auto">
+                    <button id="openSpecialMsgBtn" class="special-msg-btn font-cinzel px-5 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm md:text-base tracking-widest uppercase flex items-center gap-2.5 cursor-pointer">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path></svg>
+                        <span>Open Special Message</span>
+                        <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
+                    </button>
+                </div>
+
+                <!-- Right: Live Score & High Score -->
+                <div class="flex flex-col items-end bg-black/80 border border-red-900/50 px-4 py-2 rounded-md backdrop-blur-md shadow-lg font-sans">
+                    <div class="flex items-center gap-5 text-xs sm:text-sm">
+                        <span class="text-purple-300/70 font-semibold tracking-widest text-[10px] sm:text-xs">BEST <span id="hiScoreDisplay" class="font-mono text-amber-400/90 font-bold ml-1 text-xs sm:text-sm">07305</span></span>
+                        <span class="text-red-400/80 font-semibold tracking-widest text-[10px] sm:text-xs">SCORE <span id="liveScoreDisplay" class="font-mono text-gray-100 text-base sm:text-lg font-black ml-1 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]">00000</span></span>
+                    </div>
+                    <!-- Progress bar toward 7350 milestone -->
+                    <div class="w-full bg-slate-900 h-1.5 rounded-full mt-1.5 overflow-hidden border border-red-950">
+                        <div id="milestoneBar" class="bg-gradient-to-r from-purple-600 via-red-600 to-amber-400 h-full w-0 transition-all duration-75"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. CHARACTER SELECTION / START MENU OVERLAY -->
+            <div id="startMenuModal" class="absolute inset-0 bg-black/85 backdrop-blur-lg flex flex-col items-center justify-center p-4 sm:p-6 z-20 overflow-y-auto">
+                <div class="text-center mb-6">
+                    <p class="font-sans text-[10px] sm:text-xs uppercase tracking-[0.3em] text-red-500/80 font-bold mb-2">Welcome to Mystic Falls</p>
+                    <h2 class="font-cinzel text-2xl sm:text-4xl font-black text-gray-100 drop-shadow-[0_0_15px_rgba(220,20,60,0.5)]">CHOOSE YOUR IMMORTAL</h2>
+                    <p class="font-sans text-xs sm:text-sm text-gray-400 mt-3 max-w-lg mx-auto font-light leading-relaxed">
+                        Dodge glowing <span class="text-purple-400 font-medium">Vervain</span>, jagged <span class="text-amber-600 font-medium">Stakes</span>, and lunging <span class="text-stone-400 font-medium">Werewolves</span>.<br>Surpass the cursed score of <span class="text-red-500 font-bold drop-shadow-[0_0_8px_rgba(220,20,60,0.8)]">7,305</span>.
+                    </p>
+                </div>
+
+                <!-- Character Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-3xl mb-8 px-4">
+                    <!-- Stefan Card -->
+                    <div data-char="stefan" class="char-card selected p-4 sm:p-5 flex flex-row sm:flex-col items-center sm:text-center relative gap-4 sm:gap-0">
+                        <div class="char-card-canvas-wrap w-16 h-16 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center sm:mb-4 p-1 flex-shrink-0 transition-colors duration-300">
+                            <canvas id="preview-stefan" width="80" height="80" class="w-full h-full"></canvas>
+                        </div>
+                        <div class="flex flex-col sm:items-center text-left sm:text-center">
+                            <h3 class="font-cinzel font-bold text-base sm:text-lg text-gray-200 tracking-widest drop-shadow-[0_0_5px_rgba(220,20,60,0.3)]">STEFAN</h3>
+                            <p class="font-sans text-[10px] sm:text-xs text-red-400/80 uppercase tracking-wider mb-1 sm:mb-2 font-semibold">The Brooding Hero</p>
+                            <p class="font-sans text-[11px] text-gray-500 font-light leading-snug hidden sm:block">
+                                Dark hero hair, brown leather jacket & classic denim jeans.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Damon Card -->
+                    <div data-char="damon" class="char-card p-4 sm:p-5 flex flex-row sm:flex-col items-center sm:text-center relative gap-4 sm:gap-0">
+                        <div class="char-card-canvas-wrap w-16 h-16 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center sm:mb-4 p-1 flex-shrink-0 transition-colors duration-300">
+                            <canvas id="preview-damon" width="80" height="80" class="w-full h-full"></canvas>
+                        </div>
+                        <div class="flex flex-col sm:items-center text-left sm:text-center">
+                            <h3 class="font-cinzel font-bold text-base sm:text-lg text-gray-200 tracking-widest drop-shadow-[0_0_5px_rgba(147,51,234,0.3)]">DAMON</h3>
+                            <p class="font-sans text-[10px] sm:text-xs text-purple-400/80 uppercase tracking-wider mb-1 sm:mb-2 font-semibold">The Eternal Rebel</p>
+                            <p class="font-sans text-[11px] text-gray-500 font-light leading-snug hidden sm:block">
+                                Raven-black hair, signature all-black leather jacket & boots.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Caroline Card -->
+                    <div data-char="caroline" class="char-card p-4 sm:p-5 flex flex-row sm:flex-col items-center sm:text-center relative gap-4 sm:gap-0">
+                        <div class="char-card-canvas-wrap w-16 h-16 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center sm:mb-4 p-1 flex-shrink-0 transition-colors duration-300">
+                            <canvas id="preview-caroline" width="80" height="80" class="w-full h-full"></canvas>
+                        </div>
+                        <div class="flex flex-col sm:items-center text-left sm:text-center">
+                            <h3 class="font-cinzel font-bold text-base sm:text-lg text-gray-200 tracking-widest drop-shadow-[0_0_5px_rgba(236,72,153,0.3)]">CAROLINE</h3>
+                            <p class="font-sans text-[10px] sm:text-xs text-pink-400/80 uppercase tracking-wider mb-1 sm:mb-2 font-semibold">The Bright Force</p>
+                            <p class="font-sans text-[11px] text-gray-500 font-light leading-snug hidden sm:block">
+                                Bright blonde hair, stylish magenta jacket, skirt & boots.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Button & Controls Legend -->
+                <div class="flex flex-col items-center gap-5 w-full">
+                    <button id="startGameBtn" class="btn-vampire px-10 py-3 sm:py-4 rounded-full font-bold text-sm sm:text-base text-white cursor-pointer flex items-center gap-3">
+                        <span>Enter The Night</span>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <div class="font-sans flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-[11px] sm:text-xs text-gray-400 font-medium tracking-wide bg-black/40 px-6 py-2.5 rounded-full border border-gray-800/50">
+                        <span class="flex items-center gap-1.5">
+                            <span class="bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded text-[10px] border border-gray-700">SPACE</span> 
+                            <span>Jump</span>
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded text-[10px] border border-gray-700">DOWN</span> 
+                            <span>Duck</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 text-amber-500/90">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                            <span>7,350 Pts Unlock</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. GAME OVER OVERLAY -->
+            <div id="gameOverModal" class="hidden absolute inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-20 text-center">
+                <div class="max-w-md w-full bg-[#0a0508] border border-red-900/40 rounded-xl p-8 shadow-[0_0_50px_rgba(139,0,0,0.15)]">
+                    <p id="deathReasonText" class="font-sans text-[10px] sm:text-xs uppercase tracking-[0.25em] text-red-500/80 font-bold mb-2">CONSUMED BY THE DARKNESS</p>
+                    <h2 class="font-cinzel text-3xl sm:text-4xl font-black text-red-600 mb-6 drop-shadow-[0_0_10px_rgba(220,20,60,0.4)]">YOU WERE STAKED</h2>
+                    
+                    <div class="font-sans grid grid-cols-2 gap-4 bg-black/50 border border-red-900/30 rounded-lg p-4 mb-6">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-1">Final Score</p>
+                            <p id="finalScoreText" class="text-2xl sm:text-3xl font-mono font-light text-gray-100">00000</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-1">High Score</p>
+                            <p id="finalHiScoreText" class="text-2xl sm:text-3xl font-mono font-light text-amber-500">07305</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <button id="retryGameBtn" class="btn-vampire w-full sm:w-auto px-8 py-3 rounded-full font-bold text-xs sm:text-sm text-white cursor-pointer">
+                            Run Again
+                        </button>
+                        <button id="backToCharsBtn" class="font-sans w-full sm:w-auto px-6 py-3 rounded-full bg-transparent border border-gray-700 hover:border-gray-400 hover:bg-gray-900 text-xs sm:text-sm text-gray-300 transition cursor-pointer tracking-wider">
+                            Change Character
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. SPECIAL 20TH BIRTHDAY OLD LETTER OVERLAY MODAL -->
+            <div id="birthdayLetterModal" class="hidden absolute inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-30">
+                <div class="parchment-paper max-w-md w-full rounded-sm p-6 sm:p-9 text-center transform transition-all">
+                    
+                    <!-- Decorative Top Vintage Crest -->
+                    <div class="flex justify-center items-center gap-2 mb-3 opacity-80">
+                        <span class="h-[1px] w-12 bg-amber-950"></span>
+                        <span class="text-xs tracking-[0.3em] text-amber-950 font-bold uppercase">Mystic Falls, 1864</span>
+                        <span class="h-[1px] w-12 bg-amber-950"></span>
+                    </div>
+
+                    <!-- Subtitle in faded gothic serif -->
+                    <p class="text-xs sm:text-sm italic text-stone-800/85 mb-5 font-serif">
+                        Dearest Immortal, sealed in blood and vervain across the centuries...
+                    </p>
+
+                    <!-- Exact Required Message Text in Gothic Cursive Ink -->
+                    <div class="my-6 py-4 border-y border-amber-950/30 relative">
+                        <h2 class="cursive-ink text-4xl sm:text-5xl md:text-6xl font-bold tracking-wide select-text">
+                            Happy 20th Bday
+                        </h2>
+                    </div>
+
+                    <p class="text-xs text-stone-800/80 italic font-serif mb-6">
+                        May your youth remain eternal and your night never end.
+                    </p>
+
+                    <!-- Crimson Wax Seal & Close Button -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="wax-seal w-12 h-12 rounded-full flex items-center justify-center text-amber-200/90 font-bold text-lg shadow-md">
+                            S
+                        </div>
+                        <button id="closeLetterBtn" class="font-sans mt-1 px-7 py-2 rounded bg-amber-950 hover:bg-red-950 text-amber-100 border border-amber-800 text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg transition cursor-pointer">
+                            Close & Resume Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Mobile / Touch Action Controls Bar (Outside Canvas) -->
+        <div class="w-full max-w-md grid grid-cols-2 gap-3 mt-4 sm:mt-5 px-2 sm:px-0">
+            <button id="touchJumpBtn" class="btn-vampire py-3.5 rounded-xl font-bold text-xs sm:text-sm tracking-widest uppercase flex items-center justify-center gap-2 active:scale-95 select-none shadow-lg">
+                <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path></svg>
+                <span>JUMP</span>
+            </button>
+            <button id="touchDuckBtn" class="bg-[#110a18] hover:bg-[#1a0f24] border border-purple-900/50 shadow-[0_4px_15px_rgba(88,28,135,0.3)] py-3.5 rounded-xl font-bold text-xs sm:text-sm tracking-widest uppercase text-purple-200 flex items-center justify-center gap-2 active:scale-95 select-none transition-all font-cinzel">
+                <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path></svg>
+                <span>DUCK</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Obstacle Legend Footer -->
+    <footer class="font-sans w-full max-w-5xl mt-4 pt-3 border-t border-red-950/40 flex flex-wrap items-center justify-between text-[10px] sm:text-[11px] text-gray-500 gap-3 font-medium tracking-wide">
+        <div class="flex items-center gap-4 sm:gap-6">
+            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]"></span> Vervain</span>
+            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-700"></span> Stakes</span>
+            <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-stone-500"></span> Wolves</span>
+        </div>
+        <div>
+            <span>Target: 7,350 Pts</span>
+        </div>
+    </footer>
+
+    <script>
+        /********************************************************************
+         * 1. SOUND SYNTHESIZER (Web Audio API - Zero External Assets)
+         ********************************************************************/
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playJump() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.14);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.14);
+            }
+
+            playMilestone() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const notes = [440, 554.37, 659.25, 880]; // A4 major chord arpeggio
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + idx * 0.08;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                });
+            }
+
+            playHit() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.linearRampToValueAtTime(42, now + 0.3);
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.linearRampToValueAtTime(0.005, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        const sfx = new SoundEngine();
+
+        /********************************************************************
+         * 2. PIXEL ART CHARACTER & OBSTACLE SPRITE RENDERER
+         * Draws crisp 2D pixel blocks onto any Canvas 2D Context
+         ********************************************************************/
+        const CHARACTER_THEMES = {
+            stefan: {
+                name: 'STEFAN',
+                hair: '#3b2314',        // Dark brown hero hair
+                hairHighlight: '#5c3822',
+                skin: '#f1c27d',
+                eyes: '#2e5a44',        // Brooding green-hazel eyes
+                brow: '#26160c',
+                jacket: '#4e2a14',      // Signature dark brown leather jacket
+                jacketAccent: '#6e3f23',
+                shirt: '#7f1d1d',       // Deep henley undershirt
+                pants: '#1e3a5f',       // Classic dark blue jeans
+                boots: '#231709',
+                aura: 'rgba(220, 38, 38, 0.25)'
+            },
+            damon: {
+                name: 'DAMON',
+                hair: '#09090e',        // Raven-black hair
+                hairHighlight: '#1e293b',
+                skin: '#f5cba7',
+                eyes: '#38bdf8',        // Piercing ice-blue eyes
+                brow: '#09090e',
+                jacket: '#111116',      // Signature all-black leather jacket
+                jacketAccent: '#272732',// Silver/charcoal lapel highlight
+                shirt: '#18181b',       // Black V-neck shirt
+                pants: '#0f1015',       // Black denim
+                boots: '#08080c',
+                aura: 'rgba(147, 51, 234, 0.28)'
+            },
+            caroline: {
+                name: 'CAROLINE',
+                hair: '#facc15',        // Bright golden blonde hair
+                hairHighlight: '#fef08a',
+                skin: '#ffedd5',
+                eyes: '#3b82f6',        // Bright blue eyes
+                brow: '#ca8a04',
+                jacket: '#db2777',      // Stylish vibrant berry-pink jacket
+                jacketAccent: '#f472b6',
+                shirt: '#2dd4bf',       // Cute teal top
+                pants: '#311042',       // Stylish dark plum skirt/leggings
+                boots: '#9d174d',       // Knee-high fashion boots
+                aura: 'rgba(236, 72, 153, 0.3)'
+            }
+        };
+
+        /**
+         * Helper to draw pixel rectangles on a virtual grid
+         */
+        function drawPixelRect(ctx, ox, oy, scale, gx, gy, gw, gh, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(
+                Math.floor(ox + gx * scale),
+                Math.floor(oy + gy * scale),
+                Math.ceil(gw * scale),
+                Math.ceil(gh * scale)
+            );
+        }
+
+        /**
+         * Renders Stefan, Damon, or Caroline in 2D Pixel Art
+         */
+        function renderCharacterSprite(ctx, charKey, x, y, scale, animFrame, isDucking, isJumping) {
+            const p = CHARACTER_THEMES[charKey] || CHARACTER_THEMES.stefan;
+            const ox = x;
+            const oy = isDucking ? y + 6 * scale : y;
+
+            ctx.save();
+
+            // Subtle supernatural aura glow under character
+            ctx.fillStyle = p.aura;
+            ctx.beginPath();
+            ctx.ellipse(ox + 8 * scale, y + 21 * scale, 7 * scale, 2 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (!isDucking) {
+                // --- STANDING / RUNNING / JUMPING SPRITE (16x22 grid) ---
+
+                // 1. Hair & Head
+                if (charKey === 'stefan') {
+                    // Stefan's tall sculpted hero hair peak
+                    drawPixelRect(ctx, ox, oy, scale, 4, 0, 8, 2, p.hair);
+                    drawPixelRect(ctx, ox, oy, scale, 5, -1, 6, 1, p.hairHighlight);
+                    drawPixelRect(ctx, ox, oy, scale, 3, 2, 9, 3, p.hair);
+                } else if (charKey === 'damon') {
+                    // Damon's sleek raven hair with slight wave
+                    drawPixelRect(ctx, ox, oy, scale, 4, 0, 8, 2, p.hair);
+                    drawPixelRect(ctx, ox, oy, scale, 6, 0, 4, 1, p.hairHighlight);
+                    drawPixelRect(ctx, ox, oy, scale, 3, 2, 9, 3, p.hair);
+                } else if (charKey === 'caroline') {
+                    // Caroline's bright blonde hair with flowing ponytail
+                    drawPixelRect(ctx, ox, oy, scale, 4, 0, 8, 2, p.hair);
+                    drawPixelRect(ctx, ox, oy, scale, 5, 0, 5, 1, p.hairHighlight);
+                    drawPixelRect(ctx, ox, oy, scale, 3, 2, 9, 3, p.hair);
+                    // Flowing blonde locks behind shoulder
+                    const hairBounce = (animFrame % 2 === 0) ? 0 : 1;
+                    drawPixelRect(ctx, ox, oy, scale, 1, 3 + hairBounce, 3, 6, p.hair);
+                    drawPixelRect(ctx, ox, oy, scale, 2, 4 + hairBounce, 2, 4, p.hairHighlight);
+                }
+
+                // Face & Skin
+                drawPixelRect(ctx, ox, oy, scale, 5, 3, 7, 5, p.skin);
+                // Sideburns/back hair
+                drawPixelRect(ctx, ox, oy, scale, 4, 3, 2, 4, p.hair);
+
+                // Expression (Brooding brow for Stefan, Smirk for Damon, Bright for Caroline)
+                drawPixelRect(ctx, ox, oy, scale, 8, 4, 3, 1, p.brow);
+                drawPixelRect(ctx, ox, oy, scale, 9, 5, 2, 1, p.eyes);
+                if (charKey === 'stefan') {
+                    // Serious brooding mouth line
+                    drawPixelRect(ctx, ox, oy, scale, 9, 7, 2, 1, '#a16247');
+                } else if (charKey === 'damon') {
+                    // Signature cocky smirk
+                    drawPixelRect(ctx, ox, oy, scale, 8, 7, 3, 1, '#9a3412');
+                    drawPixelRect(ctx, ox, oy, scale, 8, 6, 1, 1, '#9a3412');
+                } else {
+                    // Stylish bright expression
+                    drawPixelRect(ctx, ox, oy, scale, 9, 7, 2, 1, '#e11d48');
+                }
+
+                // 2. Torso & Jacket (Rows 8 to 15)
+                drawPixelRect(ctx, ox, oy, scale, 4, 8, 8, 7, p.jacket);
+                // Inner shirt V-stripe
+                drawPixelRect(ctx, ox, oy, scale, 8, 8, 3, 6, p.shirt);
+                // Jacket collar & lapels
+                drawPixelRect(ctx, ox, oy, scale, 4, 8, 4, 2, p.jacketAccent);
+                drawPixelRect(ctx, ox, oy, scale, 6, 10, 2, 5, p.jacketAccent);
+
+                // Swinging Arms
+                const armSwing = isJumping ? -1 : (animFrame === 0 ? -2 : (animFrame === 2 ? 2 : 0));
+                drawPixelRect(ctx, ox, oy, scale, 6 + armSwing, 9, 3, 5, p.jacket);
+                drawPixelRect(ctx, ox, oy, scale, 6 + armSwing, 14, 2, 2, p.skin);
+
+                // 3. Legs & Boots (Rows 15 to 22)
+                if (isJumping) {
+                    // Tucked vampire leap pose
+                    drawPixelRect(ctx, ox, oy, scale, 5, 15, 3, 4, p.pants);
+                    drawPixelRect(ctx, ox, oy, scale, 9, 14, 3, 4, p.pants);
+                    drawPixelRect(ctx, ox, oy, scale, 4, 19, 4, 2, p.boots);
+                    drawPixelRect(ctx, ox, oy, scale, 9, 18, 4, 2, p.boots);
+                } else {
+                    // 4-frame smooth running cycle
+                    const legOffsets = [
+                        { lX: 4, lY: 15, rX: 9, rY: 14 },
+                        { lX: 6, lY: 15, rX: 7, rY: 15 },
+                        { lX: 9, lY: 14, rX: 4, rY: 15 },
+                        { lX: 7, lY: 15, rX: 6, rY: 15 }
+                    ][animFrame % 4];
+
+                    // Back leg
+                    drawPixelRect(ctx, ox, oy, scale, legOffsets.lX, legOffsets.lY, 3, 5, p.pants);
+                    drawPixelRect(ctx, ox, oy, scale, legOffsets.lX, legOffsets.lY + 5, 4, 2, p.boots);
+
+                    // Front leg
+                    drawPixelRect(ctx, ox, oy, scale, legOffsets.rX, legOffsets.rY, 3, 5, p.pants);
+                    drawPixelRect(ctx, ox, oy, scale, legOffsets.rX, legOffsets.rY + 5, 4, 2, p.boots);
+                }
+            } else {
+                // --- CROUCHING / VAMPIRE DUCKING SPRITE (Low profile) ---
+                // Hair & Forward-leaning Head
+                drawPixelRect(ctx, ox, oy, scale, 7, 2, 8, 3, p.hair);
+                if (charKey === 'caroline') {
+                    drawPixelRect(ctx, ox, oy, scale, 3, 3, 4, 3, p.hairHighlight);
+                }
+                drawPixelRect(ctx, ox, oy, scale, 9, 4, 6, 4, p.skin);
+                drawPixelRect(ctx, ox, oy, scale, 12, 5, 2, 1, p.eyes);
+
+                // Low aerodynamic jacket torso
+                drawPixelRect(ctx, ox, oy, scale, 3, 6, 10, 6, p.jacket);
+                drawPixelRect(ctx, ox, oy, scale, 5, 7, 6, 2, p.jacketAccent);
+
+                // Bent running legs
+                const stride = (animFrame % 2 === 0) ? 0 : 2;
+                drawPixelRect(ctx, ox, oy, scale, 4 + stride, 12, 4, 3, p.pants);
+                drawPixelRect(ctx, ox, oy, scale, 4 + stride, 14, 4, 2, p.boots);
+                drawPixelRect(ctx, ox, oy, scale, 9 - stride, 12, 4, 3, p.pants);
+                drawPixelRect(ctx, ox, oy, scale, 9 - stride, 14, 4, 2, p.boots);
+            }
+
+            ctx.restore();
+        }
+
+        /**
+         * Renders the 3 Custom TVD Obstacles in Pixel Art:
+         * 1. Vervain (Glowing purple clusters)
+         * 2. Wooden Stakes (Jagged protruding stakes)
+         * 3. Werewolves (Brown & grey dashing wolves)
+         */
+        function renderObstacleSprite(ctx, obs, time) {
+            ctx.save();
+            const { x, y, width, height, type, frameOffset } = obs;
+
+            if (type === 'vervain') {
+                // Glowing Purple Vervain Cluster on Ground
+                const pulse = 0.65 + Math.sin(time * 0.008 + frameOffset) * 0.35;
+                
+                // Mystical purple ground glow
+                const grad = ctx.createRadialGradient(
+                    x + width / 2, y + height / 2, 4,
+                    x + width / 2, y + height / 2, width * 0.85
+                );
+                grad.addColorStop(0, `rgba(192, 132, 252, ${0.55 * pulse})`);
+                grad.addColorStop(0.6, `rgba(126, 34, 206, ${0.25 * pulse})`);
+                grad.addColorStop(1, 'rgba(88, 28, 135, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x + width / 2, y + height / 2, width * 0.85, 0, Math.PI * 2);
+                ctx.fill();
+
+                const s = 3; // pixel size
+                // Dark forest stems & jagged leaves
+                drawPixelRect(ctx, x, y, s, 2, 8, 2, 6, '#14532d');
+                drawPixelRect(ctx, x, y, s, 6, 6, 2, 8, '#166534');
+                drawPixelRect(ctx, x, y, s, 10, 8, 2, 6, '#14532d');
+                drawPixelRect(ctx, x, y, s, 1, 11, 12, 3, '#052e16');
+
+                // Bright purple vervain blossoms
+                drawPixelRect(ctx, x, y, s, 1, 4, 4, 5, '#7e22ce');
+                drawPixelRect(ctx, x, y, s, 5, 1, 4, 6, '#9333ea');
+                drawPixelRect(ctx, x, y, s, 9, 4, 4, 5, '#7e22ce');
+
+                // Glowing lavender tips
+                drawPixelRect(ctx, x, y, s, 2, 5, 2, 2, '#e9d5ff');
+                drawPixelRect(ctx, x, y, s, 6, 2, 2, 3, '#f3e8ff');
+                drawPixelRect(ctx, x, y, s, 10, 5, 2, 2, '#e9d5ff');
+
+            } else if (type === 'stakes') {
+                // Sharp, Jagged Wooden Stakes protruding from the earth
+                const s = 3;
+                // Stake 1 (Left angled)
+                drawPixelRect(ctx, x, y, s, 1, 5, 3, 10, '#78350f');
+                drawPixelRect(ctx, x, y, s, 2, 3, 2, 2, '#92400e');
+                drawPixelRect(ctx, x, y, s, 2, 1, 1, 2, '#dc2626'); // Bloodied sharp tip
+
+                // Stake 2 (Center Tallest)
+                drawPixelRect(ctx, x, y, s, 5, 3, 4, 12, '#451a03');
+                drawPixelRect(ctx, x, y, s, 6, 4, 2, 10, '#92400e'); // Wood grain highlight
+                drawPixelRect(ctx, x, y, s, 6, 1, 2, 2, '#b45309');
+                drawPixelRect(ctx, x, y, s, 6, 0, 1, 2, '#991b1b'); // Crimson tip
+
+                // Stake 3 (Right jagged)
+                drawPixelRect(ctx, x, y, s, 10, 6, 3, 9, '#78350f');
+                drawPixelRect(ctx, x, y, s, 10, 4, 2, 2, '#b45309');
+                drawPixelRect(ctx, x, y, s, 11, 2, 1, 2, '#b91c1c');
+
+                // Cracked dark earth mound at base
+                drawPixelRect(ctx, x, y, s, 0, 13, 14, 2, '#1c1917');
+                drawPixelRect(ctx, x, y, s, 2, 12, 10, 2, '#292524');
+
+            } else if (type === 'werewolf') {
+                // Brown and Grey Werewolf dashing toward the player (faces left)
+                const s = 3;
+                const runCycle = Math.floor(time * 0.018 + frameOffset) % 2;
+                const legShift = runCycle === 0 ? -2 : 2;
+
+                // Bushy Wolf Tail (streaming behind on right)
+                drawPixelRect(ctx, x, y, s, 16, 3 + (runCycle ? 1 : 0), 4, 2, '#57534e');
+                drawPixelRect(ctx, x, y, s, 18, 2, 2, 2, '#44403c');
+
+                // Muscular Brown & Grey Wolf Body
+                drawPixelRect(ctx, x, y, s, 6, 3, 11, 5, '#573b26'); // Brown back fur
+                drawPixelRect(ctx, x, y, s, 7, 5, 9, 3, '#78716c');  // Grey underbelly fur
+                drawPixelRect(ctx, x, y, s, 5, 2, 5, 4, '#44403c');  // Grey mane
+
+                // Wolf Head & Snarling Jaws (Left side)
+                drawPixelRect(ctx, x, y, s, 2, 1, 4, 4, '#573b26');
+                drawPixelRect(ctx, x, y, s, 4, 0, 2, 2, '#44403c');  // Pointed ears
+                drawPixelRect(ctx, x, y, s, 0, 3, 3, 2, '#78716c');  // Snout
+                // Glowing Lockwood Gold/Amber Werewolf Eye
+                drawPixelRect(ctx, x, y, s, 2, 2, 1, 1, '#facc15');
+                // White Fangs
+                drawPixelRect(ctx, x, y, s, 0, 5, 1, 1, '#ffffff');
+                drawPixelRect(ctx, x, y, s, 2, 5, 1, 1, '#ffffff');
+
+                // Lunging Front & Hind Legs
+                drawPixelRect(ctx, x, y, s, 4 + legShift, 8, 2, 3, '#44403c');
+                drawPixelRect(ctx, x, y, s, 3 + legShift, 10, 2, 1, '#a8a29e'); // Claws
+                drawPixelRect(ctx, x, y, s, 13 - legShift, 8, 2, 3, '#573b26');
+                drawPixelRect(ctx, x, y, s, 12 - legShift, 10, 2, 1, '#a8a29e');
+            }
+
+            ctx.restore();
+        }
+
+        /********************************************************************
+         * 3. CORE ENDLESS RUNNER GAME ENGINE
+         ********************************************************************/
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game Constants
+        const W = 900;
+        const H = 450;
+        const GROUND_Y = 382;
+        const TARGET_BEAT_SCORE = 7305;
+        const BIRTHDAY_TRIGGER_SCORE = 7350;
+        // Crucial Mechanic: 7350 points in ~32 seconds -> 230 points per second
+        const SCORE_RATE_PER_SECOND = 230;
+
+        // Safe Storage Wrapper (Handles any environment gracefully)
+        let savedHighScore = TARGET_BEAT_SCORE;
+        try {
+            const stored = window.localStorage.getItem('tvd_mystic_runner_highscore');
+            if (stored && !isNaN(parseInt(stored, 10))) {
+                savedHighScore = Math.max(TARGET_BEAT_SCORE, parseInt(stored, 10));
+            }
+        } catch (e) {
+            savedHighScore = TARGET_BEAT_SCORE;
+        }
+
+        // Game State Object
+        const state = {
+            mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+            selectedChar: 'stefan',
+            score: 0,
+            highScore: savedHighScore,
+            speed: 440, // pixels per second
+            elapsedTime: 0,
+            lastFrameTime: performance.now(),
+            specialButtonShown: false,
+            beaten7305Announced: false,
+            screenFlash: 0,
+
+            // Player physics
+            player: {
+                x: 95,
+                y: GROUND_Y - 66,
+                vy: 0,
+                width: 48,
+                height: 66,
+                duckHeight: 42,
+                isJumping: false,
+                isDucking: false,
+                animTimer: 0,
+                animFrame: 0
+            },
+
+            // World & Obstacles
+            obstacles: [],
+            spawnTimer: 1.2,
+            particles: [],
+            bats: [],
+            treesFar: [],
+            treesNear: [],
+            graveStones: [],
+            stars: []
+        };
+
+        // Initialize Parallax Background Elements
+        function initEnvironment() {
+            state.stars = [];
+            for (let i = 0; i < 65; i++) {
+                state.stars.push({
+                    x: Math.random() * W,
+                    y: Math.random() * (GROUND_Y - 120),
+                    size: Math.random() > 0.7 ? 3 : 2,
+                    twinkleSpeed: 1 + Math.random() * 3,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+
+            state.treesFar = [];
+            for (let i = 0; i < 14; i++) {
+                state.treesFar.push({
+                    x: i * 75,
+                    w: 22 + Math.random() * 18,
+                    h: 130 + Math.random() * 90
+                });
+            }
+
+            state.treesNear = [];
+            for (let i = 0; i < 9; i++) {
+                state.treesNear.push({
+                    x: i * 115,
+                    w: 32 + Math.random() * 20,
+                    h: 170 + Math.random() * 90,
+                    hasBranch: Math.random() > 0.4
+                });
+            }
+
+            state.graveStones = [];
+            for (let i = 0; i < 6; i++) {
+                state.graveStones.push({
+                    x: i * 170 + Math.random() * 40,
+                    w: 18,
+                    h: 24 + Math.random() * 10
+                });
+            }
+
+            state.bats = [];
+            for (let i = 0; i < 5; i++) {
+                state.bats.push({
+                    x: Math.random() * W,
+                    y: 50 + Math.random() * 130,
+                    speed: 60 + Math.random() * 50,
+                    wingPhase: Math.random() * 10
+                });
+            }
+        }
+
+        // Render Character Previews on the Start Screen Cards
+        function renderAllCharacterPreviews() {
+            ['stefan', 'damon', 'caroline'].forEach((key, idx) => {
+                const pCanvas = document.getElementById(`preview-${key}`);
+                if (!pCanvas) return;
+                const pCtx = pCanvas.getContext('2d');
+                pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+                // Draw character centered in 80x80 preview box
+                renderCharacterSprite(pCtx, key, 14, 10, 3, 0, false, false);
+            });
+        }
+
+        // Format score with 5 digits
+        function formatScore(num) {
+            return Math.floor(num).toString().padStart(5, '0');
+        }
+
+        // Save High Score
+        function updateHighScore(newScore) {
+            if (newScore > state.highScore) {
+                state.highScore = Math.floor(newScore);
+                try {
+                    window.localStorage.setItem('tvd_mystic_runner_highscore', state.highScore.toString());
+                } catch (e) {}
+            }
+            document.getElementById('hiScoreDisplay').textContent = formatScore(state.highScore);
+        }
+
+        // Start or Reset a Game Run
+        function startGameRun() {
+            sfx.init();
+            state.mode = 'PLAYING';
+            state.score = 0;
+            state.speed = 450;
+            state.elapsedTime = 0;
+            state.obstacles = [];
+            state.particles = [];
+            state.spawnTimer = 0.9;
+            state.specialButtonShown = false;
+            state.beaten7305Announced = false;
+            state.screenFlash = 0;
+
+            state.player.y = GROUND_Y - state.player.height;
+            state.player.vy = 0;
+            state.player.isJumping = false;
+            state.player.isDucking = false;
+
+            // Update UI Overlays
+            document.getElementById('startMenuModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('birthdayLetterModal').classList.add('hidden');
+            document.getElementById('specialBtnWrapper').classList.add('hidden');
+            document.getElementById('changeCharTopBtn').classList.remove('hidden');
+
+            const theme = CHARACTER_THEMES[state.selectedChar];
+            document.getElementById('hudCharName').textContent = theme.name;
+            updateHighScore(state.highScore);
+            state.lastFrameTime = performance.now();
+        }
+
+        // Trigger Jump
+        function triggerJump() {
+            if (state.mode === 'MENU') {
+                startGameRun();
+                return;
+            }
+            if (state.mode === 'GAMEOVER') {
+                startGameRun();
+                return;
+            }
+            if (state.mode !== 'PLAYING') return;
+
+            if (!state.player.isJumping) {
+                state.player.vy = -690; // Crisp jump velocity
+                state.player.isJumping = true;
+                state.player.isDucking = false;
+                sfx.playJump();
+
+                // Spawn crimson jump dust particles
+                for (let i = 0; i < 8; i++) {
+                    state.particles.push({
+                        x: state.player.x + 20,
+                        y: GROUND_Y - 4,
+                        vx: -60 - Math.random() * 120,
+                        vy: -20 - Math.random() * 80,
+                        size: 3 + Math.random() * 3,
+                        color: Math.random() > 0.5 ? '#dc2626' : '#a855f7',
+                        life: 0.45
+                    });
+                }
+            }
+        }
+
+        // Trigger Duck
+        function setDucking(isDown) {
+            if (state.mode !== 'PLAYING') return;
+            state.player.isDucking = isDown;
+            // Fast-fall if pressing down in mid-air
+            if (isDown && state.player.isJumping && state.player.vy < 250) {
+                state.player.vy = 480;
+            }
+        }
+
+        // Spawn TVD Obstacles
+        function spawnObstacle() {
+            const roll = Math.random();
+            let obs;
+
+            if (roll < 0.36) {
+                // 1. Vervain Cluster on Ground
+                obs = {
+                    type: 'vervain',
+                    label: 'Vervain Poison',
+                    x: W + 40,
+                    y: GROUND_Y - 42,
+                    width: 42,
+                    height: 42,
+                    speedMultiplier: 1.0,
+                    frameOffset: Math.random() * 10
+                };
+            } else if (roll < 0.70) {
+                // 2. Jagged Wooden Stakes on Ground
+                obs = {
+                    type: 'stakes',
+                    label: 'Wooden Stakes',
+                    x: W + 40,
+                    y: GROUND_Y - 45,
+                    width: 42,
+                    height: 45,
+                    speedMultiplier: 1.0,
+                    frameOffset: Math.random() * 10
+                };
+            } else {
+                // 3. Lunging Werewolf (Either ground dash or mid-air leap so player can duck OR jump)
+                const isHighLeap = Math.random() > 0.42;
+                obs = {
+                    type: 'werewolf',
+                    label: 'Lockwood Werewolf',
+                    x: W + 40,
+                    // If high leap, player can duck under it or jump over it!
+                    y: isHighLeap ? (GROUND_Y - 82) : (GROUND_Y - 34),
+                    width: 58,
+                    height: 33,
+                    speedMultiplier: 1.18, // Werewolves dash faster toward the player!
+                    frameOffset: Math.random() * 10
+                };
+            }
+
+            state.obstacles.push(obs);
+        }
+
+        // Update Game Physics & Logic (60FPS Delta-Time)
+        function updateGame(dt, now) {
+            if (state.mode !== 'PLAYING') return;
+
+            state.elapsedTime += dt;
+
+            // Gradually accelerate speed up to a thrilling vampire sprint
+            state.speed = Math.min(760, 450 + state.elapsedTime * 7.5);
+            const speedMult = (state.speed / 450).toFixed(1);
+            document.getElementById('hudSpeedBadge').textContent = `${speedMult}x`;
+
+            // Crucial Mechanic: Accumulate 7350 points in ~32 seconds
+            state.score += SCORE_RATE_PER_SECOND * dt;
+
+            // Check if player just beat the target 7305 High Score
+            if (state.score >= TARGET_BEAT_SCORE && !state.beaten7305Announced) {
+                state.beaten7305Announced = true;
+                state.screenFlash = 0.35;
+                sfx.playMilestone();
+            }
+
+            // Check Special 20th Birthday Event at 7350 points
+            if (state.score >= BIRTHDAY_TRIGGER_SCORE && !state.specialButtonShown) {
+                state.specialButtonShown = true;
+                document.getElementById('specialBtnWrapper').classList.remove('hidden');
+                state.screenFlash = 0.5;
+                sfx.playMilestone();
+            }
+
+            // Update HUD Score & Progress Bar
+            document.getElementById('liveScoreDisplay').textContent = formatScore(state.score);
+            if (state.score > state.highScore) {
+                updateHighScore(state.score);
+            }
+            const progressPct = Math.min(100, (state.score / BIRTHDAY_TRIGGER_SCORE) * 100);
+            document.getElementById('milestoneBar').style.width = `${progressPct}%`;
+
+            if (state.screenFlash > 0) {
+                state.screenFlash = Math.max(0, state.screenFlash - dt);
+            }
+
+            // Player Jump & Gravity Physics
+            const p = state.player;
+            if (p.isJumping) {
+                p.y += p.vy * dt;
+                p.vy += 1780 * dt; // Gravity
+
+                if (p.y >= GROUND_Y - p.height) {
+                    p.y = GROUND_Y - p.height;
+                    p.vy = 0;
+                    p.isJumping = false;
+                }
+            }
+
+            // Player Running Frame Animation
+            p.animTimer += dt * (state.speed / 42);
+            if (p.animTimer >= 1) {
+                p.animTimer = 0;
+                p.animFrame = (p.animFrame + 1) % 4;
+            }
+
+            // Parallax Scrolling Environment
+            state.treesFar.forEach(t => {
+                t.x -= state.speed * 0.18 * dt;
+                if (t.x + t.w < 0) t.x = W + Math.random() * 40;
+            });
+            state.treesNear.forEach(t => {
+                t.x -= state.speed * 0.42 * dt;
+                if (t.x + t.w < 0) t.x = W + Math.random() * 60;
+            });
+            state.graveStones.forEach(g => {
+                g.x -= state.speed * 0.65 * dt;
+                if (g.x + g.w < 0) g.x = W + 50 + Math.random() * 120;
+            });
+            state.bats.forEach(b => {
+                b.x -= b.speed * dt;
+                b.wingPhase += dt * 12;
+                if (b.x < -30) {
+                    b.x = W + 30 + Math.random() * 100;
+                    b.y = 40 + Math.random() * 140;
+                }
+            });
+
+            // Spawn Obstacles
+            state.spawnTimer -= dt;
+            if (state.spawnTimer <= 0) {
+                spawnObstacle();
+                const minGap = Math.max(0.62, 1.15 - (state.speed - 450) / 900);
+                state.spawnTimer = minGap + Math.random() * 0.65;
+            }
+
+            // Update & Check Collisions for Obstacles
+            const playerHitbox = {
+                x: p.x + 10,
+                y: p.isDucking ? (GROUND_Y - p.duckHeight + 6) : (p.y + 6),
+                w: p.width - 20,
+                h: (p.isDucking ? p.duckHeight : p.height) - 10
+            };
+
+            for (let i = state.obstacles.length - 1; i >= 0; i--) {
+                const obs = state.obstacles[i];
+                obs.x -= state.speed * obs.speedMultiplier * dt;
+
+                // Forgiving AABB Hitbox for fair 60fps gameplay
+                const obsHitbox = {
+                    x: obs.x + 6,
+                    y: obs.y + 6,
+                    w: obs.width - 12,
+                    h: obs.height - 8
+                };
+
+                const collided = (
+                    playerHitbox.x < obsHitbox.x + obsHitbox.w &&
+                    playerHitbox.x + playerHitbox.w > obsHitbox.x &&
+                    playerHitbox.y < obsHitbox.y + obsHitbox.h &&
+                    playerHitbox.y + playerHitbox.h > obsHitbox.y
+                );
+
+                if (collided) {
+                    handleGameOver(obs.label);
+                    return;
+                }
+
+                if (obs.x + obs.width < -50) {
+                    state.obstacles.splice(i, 1);
+                }
+            }
+
+            // Update Atmospheric Particles
+            if (Math.random() < 0.35) {
+                state.particles.push({
+                    x: W + 10,
+                    y: GROUND_Y - 10 - Math.random() * 160,
+                    vx: -state.speed * 0.7,
+                    vy: -10 + Math.random() * 20,
+                    size: 2 + Math.random() * 2,
+                    color: Math.random() > 0.5 ? 'rgba(168, 85, 247, 0.55)' : 'rgba(220, 38, 38, 0.55)',
+                    life: 1.5
+                });
+            }
+
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const pt = state.particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.life -= dt;
+                if (pt.life <= 0) state.particles.splice(i, 1);
+            }
+        }
+
+        // Trigger Game Over
+        function handleGameOver(obstacleLabel) {
+            state.mode = 'GAMEOVER';
+            sfx.playHit();
+            updateHighScore(state.score);
+
+            document.getElementById('deathReasonText').textContent = `FELLED BY ${obstacleLabel.toUpperCase()}`;
+            document.getElementById('finalScoreText').textContent = formatScore(state.score);
+            document.getElementById('finalHiScoreText').textContent = formatScore(state.highScore);
+            document.getElementById('gameOverModal').classList.remove('hidden');
+        }
+
+        /********************************************************************
+         * 4. MYSTIC FALLS NIGHT ENVIRONMENT & SCENE RENDERER
+         ********************************************************************/
+        function renderScene(now) {
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Night Sky Gradient (Midnight Blues, Deep Reds & Dark Purple)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+            skyGrad.addColorStop(0, '#05050d');
+            skyGrad.addColorStop(0.45, '#120924');
+            skyGrad.addColorStop(0.8, '#2a0818');
+            skyGrad.addColorStop(1, '#3b0714');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, W, GROUND_Y);
+
+            // 2. Twinkling Pixel Stars
+            state.stars.forEach(st => {
+                const alpha = 0.35 + Math.sin(now * 0.003 * st.twinkleSpeed + st.phase) * 0.45;
+                ctx.fillStyle = `rgba(248, 250, 252, ${alpha})`;
+                ctx.fillRect(Math.floor(st.x), Math.floor(st.y), st.size, st.size);
+            });
+
+            // 3. Glowing Crimson-Tinted Mystic Falls Full Moon
+            const moonX = 720;
+            const moonY = 95;
+            const moonGlow = ctx.createRadialGradient(moonX, moonY, 20, moonX, moonY, 130);
+            moonGlow.addColorStop(0, 'rgba(254, 226, 226, 0.95)');
+            moonGlow.addColorStop(0.35, 'rgba(220, 38, 38, 0.45)');
+            moonGlow.addColorStop(0.7, 'rgba(126, 34, 206, 0.18)');
+            moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = moonGlow;
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, 130, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crisp Pixel Moon Core
+            ctx.fillStyle = '#fef2f2';
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, 34, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(252, 165, 165, 0.45)';
+            ctx.fillRect(moonX - 16, moonY - 12, 10, 8);
+            ctx.fillRect(moonX + 6, moonY + 4, 12, 10);
+            ctx.fillRect(moonX - 8, moonY + 12, 8, 6);
+
+            // 4. Distant Mystic Falls Silhouette Trees (Layer 1)
+            ctx.fillStyle = '#0d0718';
+            state.treesFar.forEach(t => {
+                const tx = Math.floor(t.x);
+                const ty = GROUND_Y - t.h;
+                ctx.fillRect(tx, ty, t.w, t.h);
+                // Pine foliage tiers
+                ctx.fillRect(tx - 12, ty + 20, t.w + 24, 18);
+                ctx.fillRect(tx - 8, ty + 5, t.w + 16, 15);
+            });
+
+            // 5. Rolling Crimson/Purple Mist Layer
+            const mistGrad = ctx.createLinearGradient(0, GROUND_Y - 90, 0, GROUND_Y);
+            mistGrad.addColorStop(0, 'rgba(74, 21, 75, 0)');
+            mistGrad.addColorStop(0.6, 'rgba(88, 28, 135, 0.28)');
+            mistGrad.addColorStop(1, 'rgba(139, 0, 0, 0.38)');
+            ctx.fillStyle = mistGrad;
+            ctx.fillRect(0, GROUND_Y - 90, W, 90);
+
+            // 6. Closer Gothic Forest Trees & Cemetery Gravestones (Layer 2)
+            ctx.fillStyle = '#07040c';
+            state.treesNear.forEach(t => {
+                const tx = Math.floor(t.x);
+                const ty = GROUND_Y - t.h;
+                ctx.fillRect(tx, ty, t.w, t.h);
+                if (t.hasBranch) {
+                    ctx.fillRect(tx - 18, ty + 45, 18, 6);
+                    ctx.fillRect(tx + t.w, ty + 70, 20, 6);
+                }
+            });
+
+            // Mystic Falls Cemetery Gravestones
+            ctx.fillStyle = '#1e1b2e';
+            state.graveStones.forEach(g => {
+                const gx = Math.floor(g.x);
+                const gy = GROUND_Y - g.h;
+                ctx.fillRect(gx, gy + 4, g.w, g.h - 4);
+                ctx.fillRect(gx + 3, gy, g.w - 6, 4);
+                // Cross engraving
+                ctx.fillStyle = '#0f0d19';
+                ctx.fillRect(gx + 8, gy + 7, 2, 10);
+                ctx.fillRect(gx + 5, gy + 10, 8, 2);
+                ctx.fillStyle = '#1e1b2e';
+            });
+
+            // 7. Flying Pixel Bats in Silhouette
+            ctx.fillStyle = '#09050f';
+            state.bats.forEach(b => {
+                const bx = Math.floor(b.x);
+                const by = Math.floor(b.y);
+                const wingY = Math.sin(b.wingPhase) > 0 ? -4 : 3;
+                ctx.fillRect(bx, by, 6, 4); // body
+                ctx.fillRect(bx - 6, by + wingY, 6, 3); // left wing
+                ctx.fillRect(bx + 6, by + wingY, 6, 3); // right wing
+            });
+
+            // 8. Dark Forest Ground & Vervain/Crimson Soil Accents
+            ctx.fillStyle = '#09060f';
+            ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+            // Top ground grass/blood-moon border strip
+            ctx.fillStyle = '#4c0519';
+            ctx.fillRect(0, GROUND_Y, W, 4);
+            ctx.fillStyle = '#881337';
+            const groundScroll = Math.floor((state.elapsedTime * state.speed) % 40);
+            for (let gx = -groundScroll; gx < W; gx += 40) {
+                ctx.fillRect(gx, GROUND_Y + 4, 22, 3);
+                ctx.fillRect(gx + 12, GROUND_Y + 14, 14, 2);
+            }
+
+            // 9. Render Obstacles (Vervain, Stakes, Werewolves)
+            state.obstacles.forEach(obs => {
+                renderObstacleSprite(ctx, obs, now);
+            });
+
+            // 10. Render Chosen Character (Stefan, Damon, or Caroline)
+            const p = state.player;
+            renderCharacterSprite(
+                ctx,
+                state.selectedChar,
+                p.x,
+                p.y,
+                3, // 3x pixel scale (16x22 -> 48x66 px)
+                p.animFrame,
+                p.isDucking,
+                p.isJumping
+            );
+
+            // 11. Render Mystical Spores & Dust Particles
+            state.particles.forEach(pt => {
+                ctx.fillStyle = pt.color;
+                ctx.fillRect(Math.floor(pt.x), Math.floor(pt.y), pt.size, pt.size);
+            });
+
+            // 12. Milestone Screen Flash Effect
+            if (state.screenFlash > 0) {
+                ctx.fillStyle = `rgba(220, 38, 38, ${state.screenFlash * 0.45})`;
+                ctx.fillRect(0, 0, W, H);
+            }
+        }
+
+        // Main 60FPS Game Loop
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - state.lastFrameTime) / 1000);
+            state.lastFrameTime = now;
+
+            updateGame(dt, now);
+            renderScene(now);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /********************************************************************
+         * 5. EVENT LISTENERS & UI INTERACTIONS
+         ********************************************************************/
+        // Character Selection Cards
+        document.querySelectorAll('.char-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                state.selectedChar = card.getAttribute('data-char');
+                const theme = CHARACTER_THEMES[state.selectedChar];
+                document.getElementById('hudCharName').textContent = theme.name;
+            });
+        });
+
+        // Start & Retry Buttons
+        document.getElementById('startGameBtn').addEventListener('click', startGameRun);
+        document.getElementById('retryGameBtn').addEventListener('click', startGameRun);
+
+        // Return to Character Select Menu
+        function openCharacterMenu() {
+            state.mode = 'MENU';
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('birthdayLetterModal').classList.add('hidden');
+            document.getElementById('startMenuModal').classList.remove('hidden');
+        }
+        document.getElementById('backToCharsBtn').addEventListener('click', openCharacterMenu);
+        document.getElementById('changeCharTopBtn').addEventListener('click', openCharacterMenu);
+
+        // Special 20th Birthday Letter Modal Handlers (Pauses & Resumes Game)
+        document.getElementById('openSpecialMsgBtn').addEventListener('click', () => {
+            if (state.mode === 'PLAYING') {
+                state.mode = 'PAUSED';
+            }
+            document.getElementById('birthdayLetterModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeLetterBtn').addEventListener('click', () => {
+            document.getElementById('birthdayLetterModal').classList.add('hidden');
+            if (state.mode === 'PAUSED') {
+                state.mode = 'PLAYING';
+                state.lastFrameTime = performance.now();
+            }
+        });
+
+        // Sound Toggle Button
+        document.getElementById('soundToggleBtn').addEventListener('click', () => {
+            sfx.enabled = !sfx.enabled;
+            const iconOn = document.getElementById('soundIconOn');
+            const iconOff = document.getElementById('soundIconOff');
+            if (sfx.enabled) {
+                iconOn.classList.remove('hidden');
+                iconOff.classList.add('hidden');
+                document.getElementById('soundLabel').textContent = 'SFX ON';
+            } else {
+                iconOn.classList.add('hidden');
+                iconOff.classList.remove('hidden');
+                document.getElementById('soundLabel').textContent = 'MUTED';
+            }
+        });
+
+        // Keyboard Controls (Space / Up Arrow to Jump, Down Arrow to Duck)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                e.preventDefault();
+                // If birthday letter modal is open, Space/Escape can close it
+                if (!document.getElementById('birthdayLetterModal').classList.contains('hidden')) {
+                    document.getElementById('closeLetterBtn').click();
+                    return;
+                }
+                triggerJump();
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                e.preventDefault();
+                setDucking(true);
+            } else if (e.code === 'Escape' && !document.getElementById('birthdayLetterModal').classList.contains('hidden')) {
+                document.getElementById('closeLetterBtn').click();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                e.preventDefault();
+                setDucking(false);
+            }
+        });
+
+        // Touch & Mouse Controls for Mobile/Tablet Responsiveness
+        const touchJumpBtn = document.getElementById('touchJumpBtn');
+        const touchDuckBtn = document.getElementById('touchDuckBtn');
+
+        touchJumpBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            triggerJump();
+        });
+
+        touchDuckBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            setDucking(true);
+        });
+        touchDuckBtn.addEventListener('pointerup', () => setDucking(false));
+        touchDuckBtn.addEventListener('pointerleave', () => setDucking(false));
+
+        // Tap directly on canvas to jump during play
+        canvas.addEventListener('pointerdown', (e) => {
+            if (state.mode === 'PLAYING') {
+                e.preventDefault();
+                triggerJump();
+            }
+        });
+
+        // Boot Game on Window Load
+        window.onload = function () {
+            initEnvironment();
+            renderAllCharacterPreviews();
+            updateHighScore(state.highScore);
+            state.lastFrameTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
